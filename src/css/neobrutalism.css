@@ -1,0 +1,298 @@
+
+:root {
+  --border-width: 4px;
+  --border-radius: 16px;
+  --border-color: #000;
+
+  --shadow-color: #000;
+  --shadow: 6px 6px 0 var(--shadow-color);
+  --shadow-hover: 2px 2px 0 var(--shadow-color);
+
+  --transition: 0.18s ease;
+}
+
+/* Classic */
+[data-theme="classic"] {
+  --bg-color: #fff8e7;
+  --surface-color: #ffffff;
+
+  --text-color: #111;
+  --text-secondary-color: #555;
+
+  --primary-color: #ffd60a;
+  --secondary-color: #00d9ff;
+  --accent-color: #ff4d6d;
+
+  --success-color: #2ceaa3;
+  --warning-color: #ff9f1c;
+  --danger-color: #ff3b30;
+
+  --purple-color: #9b5de5;
+  --blue-color: #3a86ff;
+  --green-color: #06d6a0;
+  --lime-color: #b8f200;
+  --orange-color: #fb8500;
+  --pink-color: #ff5d8f;
+  --cyan-color: #00f5ff;
+  --brown-color: #8d5524;
+}
+
+/* Dark */
+[data-theme="dark"] {
+  --bg-color: #18181b;
+  --surface-color: #27272a;
+
+  --text-color: #ffffff;
+  --text-secondary-color: #d4d4d8;
+
+  --primary-color: #ffac30;
+  --secondary-color: #0cdae0;
+  --accent-color: #ff5d8f;
+
+  --success-color: #3ddc97;
+  --warning-color: #ffb703;
+  --danger-color: #ff595e;
+
+  --purple-color: #a78bfa;
+  --blue-color: #60a5fa;
+  --green-color: #4ade80;
+  --lime-color: #a3e635;
+  --orange-color: #fb923c;
+  --pink-color: #f472b6;
+  --cyan-color: #67e8f9;
+  --brown-color: #b08968;
+}
+
+/* Pastel */
+[data-theme="pastel"] {
+  --bg-color: #fff7f0;
+  --surface-color: #ffffff;
+
+  --text-color: #202020;
+  --text-secondary-color: #555555;
+
+  --primary-color: #ffe66d;
+  --secondary-color: #8eecf5;
+  --accent-color: #ff8fab;
+
+  --success-color: #b8f2e6;
+  --warning-color: #ffd6a5;
+  --danger-color: #ff7096;
+
+  --purple-color: #cdb4db;
+  --blue-color: #a2d2ff;
+  --green-color: #cdeac0;
+  --lime-color: #d9ed92;
+  --orange-color: #ffcb77;
+  --pink-color: #ffc8dd;
+  --cyan-color: #bde0fe;
+  --brown-color: #d4a373;
+}
+
+/* Ocean */
+[data-theme="ocean"] {
+  --bg-color: #e8f4f8;
+  --surface-color: #ffffff;
+
+  --text-color: #0c4a6e;
+  --text-secondary-color: #475569;
+
+  --primary-color: #0077b6;
+  --secondary-color: #00b4d8;
+  --accent-color: #ff6b6b;
+
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+
+  --purple-color: #7c3aed;
+  --blue-color: #2563eb;
+  --green-color: #059669;
+  --lime-color: #65a30d;
+  --orange-color: #ea580c;
+  --pink-color: #db2777;
+  --cyan-color: #06b6d4;
+  --brown-color: #92400e;
+}
+
+/* Sunset */
+[data-theme="sunset"] {
+  --bg-color: #fff5ee;
+  --surface-color: #ffffff;
+
+  --text-color: #1a1a2e;
+  --text-secondary-color: #4a4e69;
+
+  --primary-color: #ff6b35;
+  --secondary-color: #ff8c42;
+  --accent-color: #9b5de5;
+
+  --success-color: #2d6a4f;
+  --warning-color: #e9c46a;
+  --danger-color: #d62828;
+
+  --purple-color: #7209b7;
+  --blue-color: #4cc9f0;
+  --green-color: #52b788;
+  --lime-color: #a7c957;
+  --orange-color: #f4a261;
+  --pink-color: #f72585;
+  --cyan-color: #48cae4;
+  --brown-color: #7f4f24;
+}
+
+/* Forest */
+[data-theme="forest"] {
+  --bg-color: #f0f7f0;
+  --surface-color: #ffffff;
+
+  --text-color: #1b4332;
+  --text-secondary-color: #555b6e;
+
+  --primary-color: #2d6a4f;
+  --secondary-color: #52b788;
+  --accent-color: #f4a261;
+
+  --success-color: #40916c;
+  --warning-color: #e9c46a;
+  --danger-color: #bc4742;
+
+  --purple-color: #6f42c1;
+  --blue-color: #1d3557;
+  --green-color: #2d6a4f;
+  --lime-color: #a7c957;
+  --orange-color: #e76f51;
+  --pink-color: #d00000;
+  --cyan-color: #48cae4;
+  --brown-color: #8b5a2b;
+}
+
+/* Neon */
+[data-theme="neon"] {
+  --bg-color: #0a0a0a;
+  --surface-color: #1a1a2e;
+
+  --text-color: #ffffff;
+  --text-secondary-color: #b3b3b3;
+
+  --primary-color: #ff00ff;
+  --secondary-color: #00ffff;
+  --accent-color: #ff003c;
+
+  --success-color: #39ff14;
+  --warning-color: #ffcc00;
+  --danger-color: #ff0040;
+
+  --purple-color: #b300ff;
+  --blue-color: #0066ff;
+  --green-color: #00ff41;
+  --lime-color: #ccff00;
+  --orange-color: #ff6600;
+  --pink-color: #ff0080;
+  --cyan-color: #00ffcc;
+  --brown-color: #cc6600;
+}
+
+/* Monochrome */
+[data-theme="monochrome"] {
+  --bg-color: #fafafa;
+  --surface-color: #ffffff;
+
+  --text-color: #0a0a0a;
+  --text-secondary-color: #525252;
+
+  --primary-color: #4a4a4a;
+  --secondary-color: #4a4a4a;
+  --accent-color: #7a7a7a;
+
+  --success-color: #2d2d2d;
+  --warning-color: #5c5c5c;
+  --danger-color: #0a0a0a;
+
+  --purple-color: #3d3d3d;
+  --blue-color: #404040;
+  --green-color: #404040;
+  --lime-color: #595959;
+  --orange-color: #737373;
+  --pink-color: #8c8c8c;
+  --cyan-color: #666666;
+  --brown-color: #333333;
+}
+
+/* Cherry */
+[data-theme="cherry"] {
+  --bg-color: #fff0f3;
+  --surface-color: #ffffff;
+
+  --text-color: #1d1d1d;
+  --text-secondary-color: #555555;
+
+  --primary-color: #e63946;
+  --secondary-color: #ff6b81;
+  --accent-color: #c9184a;
+
+  --success-color: #40916c;
+  --warning-color: #ffb703;
+  --danger-color: #800f2f;
+
+  --purple-color: #7b2cbf;
+  --blue-color: #457b9d;
+  --green-color: #52b788;
+  --lime-color: #a7c957;
+  --orange-color: #f4a261;
+  --pink-color: #ff0a54;
+  --cyan-color: #48cae4;
+  --brown-color: #6f2b2b;
+}
+
+/* Twilight */
+[data-theme="twilight"] {
+  --bg-color: #f5f0ff;
+  --surface-color: #ffffff;
+
+  --text-color: #1a1a2e;
+  --text-secondary-color: #4a4e69;
+
+  --primary-color: #6c63ff;
+  --secondary-color: #9d4edd;
+  --accent-color: #ff6b6b;
+
+  --success-color: #3ddc97;
+  --warning-color: #ffb703;
+  --danger-color: #ff477e;
+
+  --purple-color: #7209b7;
+  --blue-color: #3a0ca3;
+  --green-color: #2ec4b6;
+  --lime-color: #a7c957;
+  --orange-color: #f4a261;
+  --pink-color: #ff006e;
+  --cyan-color: #48cae4;
+  --brown-color: #7f5539;
+}
+
+/* Mint */
+[data-theme="mint"] {
+  --bg-color: #f0fff4;
+  --surface-color: #ffffff;
+
+  --text-color: #1b4332;
+  --text-secondary-color: #555b6e;
+
+  --primary-color: #06d6a0;
+  --secondary-color: #118ab2;
+  --accent-color: #ef476f;
+
+  --success-color: #38b000;
+  --warning-color: #ffb703;
+  --danger-color: #d00000;
+
+  --purple-color: #9381ff;
+  --blue-color: #0077b6;
+  --green-color: #06d6a0;
+  --lime-color: #a7c957;
+  --orange-color: #f4a261;
+  --pink-color: #f72585;
+  --cyan-color: #00b4d8;
+  --brown-color: #b08968;
+}
