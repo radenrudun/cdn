@@ -36,9 +36,7 @@ function typewriter(element, texts, options = {}) {
 
         const number = parseFloat(match[1]);
 
-        return match[2] === "s"
-            ? number * 1000
-            : number;
+        return match[2] === "s" ? number * 1000 : number;
     };
 
     const typingDelay = parseTime(speed);
@@ -47,15 +45,11 @@ function typewriter(element, texts, options = {}) {
     const pauseDelay = parseTime(pause);
     const betweenDelay = parseTime(between);
 
-    const sleep = ms =>
-        new Promise(resolve => setTimeout(resolve, ms));
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     if (cursor) {
         target.classList.add("typewriter-cursor");
-        target.style.setProperty(
-            "--typewriter-cursor",
-            `"${cursorChar}"`
-        );
+        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
     }
 
     target.textContent = "";
@@ -68,7 +62,7 @@ function typewriter(element, texts, options = {}) {
     }
 
     async function deleteText(text) {
-        for (let i = text.length; i > 0; i--) {
+        for (let i = text.length; i > 1; i--) {
             target.textContent = text.slice(0, i - 1);
             await sleep(removeDelay);
         }
@@ -87,6 +81,7 @@ function typewriter(element, texts, options = {}) {
                     await sleep(pauseDelay);
                     await deleteText(text);
                     await sleep(betweenDelay);
+                    target.textContent = "";
                 }
             }
 
@@ -96,14 +91,13 @@ function typewriter(element, texts, options = {}) {
 
             await sleep(pauseDelay);
 
-            const lastText = String(
-                textList[textList.length - 1]
-            );
+            const lastText = String(textList[textList.length - 1]);
 
             await deleteText(lastText);
 
             await sleep(betweenDelay);
 
+            target.textContent = "";
         } while (loop);
     }
 
