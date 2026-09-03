@@ -1,5 +1,4 @@
 /**
- * NOPEN
  * Typewriter.js
  * V2 - Scroll Typewriter
  *
@@ -47,44 +46,54 @@ function typewriterGetElement(element) {
     return null;
 }
 
-function reserveTextSpace() {
-    if (!reserveSpace) {
+function reserveTextSpace(target, textList, enabled) {
+    if (!enabled || !target || !textList.length) {
         return;
     }
 
-    const computed = getComputedStyle(target);
-
     const clone = target.cloneNode(false);
 
-    clone.textContent = textList.reduce((longest, text) => {
-        return text.length > longest.length ? text : longest;
-    }, "");
+    clone.textContent = textList.reduce(
+        (longest, text) => (text.length > longest.length ? text : longest),
+        ""
+    );
 
+    /*
+     * Jangan ikut terlihat
+     */
     clone.style.position = "absolute";
     clone.style.visibility = "hidden";
     clone.style.pointerEvents = "none";
+
+    /*
+     * Jangan gunakan width dari getBoundingClientRect.
+     * Biarkan CSS asli #pgHero menentukan width.
+     */
+    clone.style.width = "100%";
+
+    /*
+     * Pastikan tinggi mengikuti isi
+     */
     clone.style.height = "auto";
     clone.style.minHeight = "0";
     clone.style.maxHeight = "none";
 
     /*
-     * Pertahankan ukuran/layout asli
+     * Masukkan ke parent yang sama
      */
-    clone.style.width = `${target.getBoundingClientRect().width}px`;
+    target.parentNode.appendChild(clone);
 
     /*
-     * Kalau target inline, height tidak bekerja
+     * Browser sekarang menghitung wrapping
+     * berdasarkan layout parent yang sebenarnya.
      */
-    if (computed.display === "inline") {
-        clone.style.display = "block";
-    }
-
-    document.body.appendChild(clone);
-
     const height = clone.offsetHeight;
 
     clone.remove();
 
+    /*
+     * Simpan tinggi maksimum
+     */
     target.style.minHeight = `${height}px`;
 }
 
@@ -118,7 +127,7 @@ function typewriter(element, texts, options = {}) {
 
     const textList = Array.isArray(texts) ? texts : [texts];
 
-    reserveTextSpace();
+    reserveTextSpace(target, textList, reserveSpace);
 
     const typingDelay = typewriterParseTime(speed);
 
@@ -262,7 +271,7 @@ function scrollTypewriter(element, texts, options = {}) {
 
     const textList = Array.isArray(texts) ? texts.map(String) : [String(texts)];
 
-    reserveTextSpace();
+    reserveTextSpace(target, textList, reserveSpace);
 
     /* =====================================================
      * State
