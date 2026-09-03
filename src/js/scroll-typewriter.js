@@ -1,4 +1,5 @@
 /**
+ * NOPEN
  * Typewriter.js
  * V2 - Scroll Typewriter
  *
@@ -8,7 +9,6 @@
  * V2:
  * scrollTypewriter(element, texts, options)
  */
-
 
 /* =========================================================
  * Utilities
@@ -28,39 +28,71 @@ function typewriterParseTime(value) {
 
     const number = parseFloat(match[1]);
 
-    return match[2] === "s"
-        ? number * 1000
-        : number;
+    return match[2] === "s" ? number * 1000 : number;
 }
-
 
 function typewriterSleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 
 function typewriterGetElement(element) {
     if (typeof element === "string") {
         return document.getElementById(element);
     }
 
-    if (
-        typeof Element !== "undefined" &&
-        element instanceof Element
-    ) {
+    if (typeof Element !== "undefined" && element instanceof Element) {
         return element;
     }
 
     return null;
 }
 
+function reserveTextSpace() {
+    if (!reserveSpace) {
+        return;
+    }
+
+    const computed = getComputedStyle(target);
+
+    const clone = target.cloneNode(false);
+
+    clone.textContent = textList.reduce((longest, text) => {
+        return text.length > longest.length ? text : longest;
+    }, "");
+
+    clone.style.position = "absolute";
+    clone.style.visibility = "hidden";
+    clone.style.pointerEvents = "none";
+    clone.style.height = "auto";
+    clone.style.minHeight = "0";
+    clone.style.maxHeight = "none";
+
+    /*
+     * Pertahankan ukuran/layout asli
+     */
+    clone.style.width = `${target.getBoundingClientRect().width}px`;
+
+    /*
+     * Kalau target inline, height tidak bekerja
+     */
+    if (computed.display === "inline") {
+        clone.style.display = "block";
+    }
+
+    document.body.appendChild(clone);
+
+    const height = clone.offsetHeight;
+
+    clone.remove();
+
+    target.style.minHeight = `${height}px`;
+}
 
 /* =========================================================
  * V1 - Normal Typewriter
  * ========================================================= */
 
 function typewriter(element, texts, options = {}) {
-
     const {
         speed = "0.08s",
         delay = "0s",
@@ -72,196 +104,109 @@ function typewriter(element, texts, options = {}) {
 
         deleteSpeed = "0.05s",
         pause = "1s",
-        between = "0s"
+        between = "0s",
+        reserveSpace = true
     } = options;
-
 
     const target = typewriterGetElement(element);
 
     if (!target) {
-        console.error(
-            `Typewriter: element "${element}" not found.`
-        );
+        console.error(`Typewriter: element "${element}" not found.`);
 
         return;
     }
 
+    const textList = Array.isArray(texts) ? texts : [texts];
 
-    const textList =
-        Array.isArray(texts)
-            ? texts
-            : [texts];
+    reserveTextSpace();
 
+    const typingDelay = typewriterParseTime(speed);
 
-    const typingDelay =
-        typewriterParseTime(speed);
+    const startDelay = typewriterParseTime(delay);
 
-    const startDelay =
-        typewriterParseTime(delay);
+    const removeDelay = typewriterParseTime(deleteSpeed);
 
-    const removeDelay =
-        typewriterParseTime(deleteSpeed);
+    const pauseDelay = typewriterParseTime(pause);
 
-    const pauseDelay =
-        typewriterParseTime(pause);
-
-    const betweenDelay =
-        typewriterParseTime(between);
-
+    const betweenDelay = typewriterParseTime(between);
 
     /* Cursor */
 
     if (cursor) {
+        target.classList.add("typewriter-cursor");
 
-        target.classList.add(
-            "typewriter-cursor"
-        );
-
-        target.style.setProperty(
-            "--typewriter-cursor",
-            `"${cursorChar}"`
-        );
+        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
     }
 
-
     target.textContent = "";
-
 
     /* Type */
 
     async function typeText(text) {
-
         for (const char of text) {
-
             target.textContent += char;
 
-            await typewriterSleep(
-                typingDelay
-            );
+            await typewriterSleep(typingDelay);
         }
     }
-
 
     /* Delete */
 
     async function deleteText(text) {
+        for (let i = text.length; i > 1; i--) {
+            target.textContent = text.slice(0, i - 1);
 
-        for (
-            let i = text.length;
-            i > 1;
-            i--
-        ) {
-
-            target.textContent =
-                text.slice(0, i - 1);
-
-            await typewriterSleep(
-                removeDelay
-            );
+            await typewriterSleep(removeDelay);
         }
     }
-
 
     /* Start */
 
     async function start() {
-
-        await typewriterSleep(
-            startDelay
-        );
-
+        await typewriterSleep(startDelay);
 
         do {
-
-            for (
-                let i = 0;
-                i < textList.length;
-                i++
-            ) {
-
-                const text =
-                    String(textList[i]);
-
+            for (let i = 0; i < textList.length; i++) {
+                const text = String(textList[i]);
 
                 await typeText(text);
 
+                if (i < textList.length - 1) {
+                    await typewriterSleep(pauseDelay);
 
-                if (
-                    i <
-                    textList.length - 1
-                ) {
+                    await deleteText(text);
 
-                    await typewriterSleep(
-                        pauseDelay
-                    );
-
-
-                    await deleteText(
-                        text
-                    );
-
-
-                    await typewriterSleep(
-                        betweenDelay
-                    );
-
+                    await typewriterSleep(betweenDelay);
 
                     target.textContent = "";
                 }
             }
 
-
             if (!loop) {
                 break;
             }
 
+            await typewriterSleep(pauseDelay);
 
-            await typewriterSleep(
-                pauseDelay
-            );
+            const lastText = String(textList[textList.length - 1]);
 
+            await deleteText(lastText);
 
-            const lastText =
-                String(
-                    textList[
-                        textList.length - 1
-                    ]
-                );
-
-
-            await deleteText(
-                lastText
-            );
-
-
-            await typewriterSleep(
-                betweenDelay
-            );
-
+            await typewriterSleep(betweenDelay);
 
             target.textContent = "";
-
-
         } while (loop);
     }
 
-
     start();
 }
-
 
 /* =========================================================
  * V2 - Scroll Typewriter
  * ========================================================= */
 
-function scrollTypewriter(
-    element,
-    texts,
-    options = {}
-) {
-
+function scrollTypewriter(element, texts, options = {}) {
     const {
-
         /*
          * Trigger:
          *
@@ -290,7 +235,6 @@ function scrollTypewriter(
 
         triggerTolerance = "10vh",
 
-
         speed = "0.08s",
         delay = "0s",
 
@@ -303,30 +247,22 @@ function scrollTypewriter(
         pause = "1s",
         between = "0s",
 
-        deleteOnExit = true
+        deleteOnExit = true,
 
+        reserveSpace = true
     } = options;
 
-
-    const target =
-        typewriterGetElement(element);
-
+    const target = typewriterGetElement(element);
 
     if (!target) {
-
-        console.error(
-            `ScrollTypewriter: element "${element}" not found.`
-        );
+        console.error(`ScrollTypewriter: element "${element}" not found.`);
 
         return;
     }
 
+    const textList = Array.isArray(texts) ? texts.map(String) : [String(texts)];
 
-    const textList =
-        Array.isArray(texts)
-            ? texts.map(String)
-            : [String(texts)];
-
+    reserveTextSpace();
 
     /* =====================================================
      * State
@@ -342,504 +278,276 @@ function scrollTypewriter(
 
     let abortController = null;
 
-
     /* =====================================================
      * Cursor
      * ===================================================== */
 
     if (cursor) {
+        target.classList.add("typewriter-cursor");
 
-        target.classList.add(
-            "typewriter-cursor"
-        );
-
-        target.style.setProperty(
-            "--typewriter-cursor",
-            `"${cursorChar}"`
-        );
+        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
     }
-
 
     /* =====================================================
      * Time
      * ===================================================== */
 
-    const typingDelay =
-        typewriterParseTime(speed);
+    const typingDelay = typewriterParseTime(speed);
 
-    const startDelay =
-        typewriterParseTime(delay);
+    const startDelay = typewriterParseTime(delay);
 
-    const removeDelay =
-        typewriterParseTime(deleteSpeed);
+    const removeDelay = typewriterParseTime(deleteSpeed);
 
-    const pauseDelay =
-        typewriterParseTime(pause);
+    const pauseDelay = typewriterParseTime(pause);
 
-    const betweenDelay =
-        typewriterParseTime(between);
-
+    const betweenDelay = typewriterParseTime(between);
 
     /* =====================================================
      * Trigger Helpers
      * ===================================================== */
 
-    function parseViewportValue(
-        value,
-        fallback
-    ) {
-
+    function parseViewportValue(value, fallback) {
         if (value === undefined) {
             return fallback;
         }
 
-
-        if (
-            typeof value === "string" &&
-            value.endsWith("vh")
-        ) {
-
-            return (
-                parseFloat(value) / 100
-            ) * window.innerHeight;
+        if (typeof value === "string" && value.endsWith("vh")) {
+            return (parseFloat(value) / 100) * window.innerHeight;
         }
 
-
-        if (
-            typeof value === "string" &&
-            value.endsWith("px")
-        ) {
-
+        if (typeof value === "string" && value.endsWith("px")) {
             return parseFloat(value);
         }
-
 
         if (typeof value === "number") {
             return value;
         }
 
-
         return fallback;
     }
 
-
     function getTriggerZone() {
-
-        const viewportHeight =
-            window.innerHeight;
-
+        const viewportHeight = window.innerHeight;
 
         /*
          * Single trigger
          */
 
-        if (
-            typeof trigger === "string" ||
-            typeof trigger === "number"
-        ) {
-
+        if (typeof trigger === "string" || typeof trigger === "number") {
             let position = trigger;
-
 
             if (position === "center") {
                 position = "50vh";
             }
 
+            const point = parseViewportValue(position, viewportHeight / 2);
 
-            const point =
-                parseViewportValue(
-                    position,
-                    viewportHeight / 2
-                );
-
-
-            const tolerance =
-                parseViewportValue(
-                    triggerTolerance,
-                    viewportHeight * 0.1
-                );
-
+            const tolerance = parseViewportValue(
+                triggerTolerance,
+                viewportHeight * 0.1
+            );
 
             return {
+                top: point - tolerance,
 
-                top:
-                    point - tolerance,
-
-                bottom:
-                    point + tolerance,
+                bottom: point + tolerance,
 
                 single: true
             };
         }
 
-
         /*
          * Custom zone
          */
 
-        if (
-            typeof trigger === "object" &&
-            trigger !== null
-        ) {
-
+        if (typeof trigger === "object" && trigger !== null) {
             return {
+                top: parseViewportValue(trigger.top, 0),
 
-                top:
-                    parseViewportValue(
-                        trigger.top,
-                        0
-                    ),
-
-                bottom:
-                    parseViewportValue(
-                        trigger.bottom,
-                        viewportHeight
-                    ),
+                bottom: parseViewportValue(trigger.bottom, viewportHeight),
 
                 single: false
             };
         }
 
-
         return {
-
             top: 0,
 
-            bottom:
-                viewportHeight,
+            bottom: viewportHeight,
 
             single: false
         };
     }
-
 
     /* =====================================================
      * Position Check
      * ===================================================== */
 
     function isInTriggerZone() {
+        const rect = target.getBoundingClientRect();
 
-        const rect =
-            target.getBoundingClientRect();
-
-
-        const zone =
-            getTriggerZone();
-
+        const zone = getTriggerZone();
 
         /*
          * Element dianggap aktif jika
          * sebagian element berada di zona.
          */
 
-        return (
-            rect.bottom > zone.top &&
-            rect.top < zone.bottom
-        );
+        return rect.bottom > zone.top && rect.top < zone.bottom;
     }
-
 
     /* =====================================================
      * Animation Control
      * ===================================================== */
 
     function stopAnimation() {
-
         animationId++;
-
 
         if (abortController) {
             abortController.abort();
         }
 
-
-        abortController =
-            new AbortController();
+        abortController = new AbortController();
     }
 
-
-    function isCancelled(
-        id,
-        signal
-    ) {
-
-        return (
-            destroyed ||
-            id !== animationId ||
-            signal.aborted
-        );
+    function isCancelled(id, signal) {
+        return destroyed || id !== animationId || signal.aborted;
     }
-
 
     /* =====================================================
      * Type
      * ===================================================== */
 
-    async function typeText(
-        text,
-        id,
-        signal
-    ) {
-
+    async function typeText(text, id, signal) {
         for (const char of text) {
-
-            if (
-                isCancelled(
-                    id,
-                    signal
-                )
-            ) {
+            if (isCancelled(id, signal)) {
                 return false;
             }
 
-
             target.textContent += char;
 
-
-            await typewriterSleep(
-                typingDelay
-            );
+            await typewriterSleep(typingDelay);
         }
-
 
         return true;
     }
-
 
     /* =====================================================
      * Delete
      * ===================================================== */
 
-    async function deleteText(
-        text,
-        id,
-        signal
-    ) {
-
-        for (
-            let i = text.length;
-            i > 1;
-            i--
-        ) {
-
-            if (
-                isCancelled(
-                    id,
-                    signal
-                )
-            ) {
+    async function deleteText(text, id, signal) {
+        for (let i = text.length; i > 1; i--) {
+            if (isCancelled(id, signal)) {
                 return false;
             }
 
+            target.textContent = text.slice(0, i - 1);
 
-            target.textContent =
-                text.slice(0, i - 1);
-
-
-            await typewriterSleep(
-                removeDelay
-            );
+            await typewriterSleep(removeDelay);
         }
 
-
-        if (
-            !isCancelled(
-                id,
-                signal
-            )
-        ) {
-
+        if (!isCancelled(id, signal)) {
             target.textContent = "";
         }
 
-
         return true;
     }
-
 
     /* =====================================================
      * Run
      * ===================================================== */
 
     async function runTypewriter() {
-
         stopAnimation();
 
+        const id = animationId;
 
-        const id =
-            animationId;
-
-
-        const signal =
-            abortController.signal;
-
+        const signal = abortController.signal;
 
         target.textContent = "";
 
+        await typewriterSleep(startDelay);
 
-        await typewriterSleep(
-            startDelay
-        );
-
-
-        if (
-            isCancelled(
-                id,
-                signal
-            )
-        ) {
+        if (isCancelled(id, signal)) {
             return;
         }
 
-
         do {
-
-            for (
-                let i = 0;
-                i < textList.length;
-                i++
-            ) {
-
-                if (
-                    isCancelled(
-                        id,
-                        signal
-                    )
-                ) {
+            for (let i = 0; i < textList.length; i++) {
+                if (isCancelled(id, signal)) {
                     return;
                 }
 
+                const text = textList[i];
 
-                const text =
-                    textList[i];
-
-
-                const completed =
-                    await typeText(
-                        text,
-                        id,
-                        signal
-                    );
-
+                const completed = await typeText(text, id, signal);
 
                 if (!completed) {
                     return;
                 }
 
-
                 /*
                  * Text berikutnya
                  */
 
-                if (
-                    i <
-                    textList.length - 1
-                ) {
+                if (i < textList.length - 1) {
+                    await typewriterSleep(pauseDelay);
 
-                    await typewriterSleep(
-                        pauseDelay
-                    );
-
-
-                    if (
-                        isCancelled(
-                            id,
-                            signal
-                        )
-                    ) {
+                    if (isCancelled(id, signal)) {
                         return;
                     }
 
-
-                    const deleted =
-                        await deleteText(
-                            text,
-                            id,
-                            signal
-                        );
-
+                    const deleted = await deleteText(text, id, signal);
 
                     if (!deleted) {
                         return;
                     }
 
-
-                    await typewriterSleep(
-                        betweenDelay
-                    );
+                    await typewriterSleep(betweenDelay);
                 }
             }
-
 
             /*
              * Tidak loop
              */
 
             if (!loop) {
-
                 started = true;
 
                 return;
             }
 
-
             /*
              * Loop
              */
 
-            await typewriterSleep(
-                pauseDelay
-            );
+            await typewriterSleep(pauseDelay);
 
-
-            if (
-                isCancelled(
-                    id,
-                    signal
-                )
-            ) {
+            if (isCancelled(id, signal)) {
                 return;
             }
 
+            const lastText = textList[textList.length - 1];
 
-            const lastText =
-                textList[
-                    textList.length - 1
-                ];
-
-
-            const deleted =
-                await deleteText(
-                    lastText,
-                    id,
-                    signal
-                );
-
+            const deleted = await deleteText(lastText, id, signal);
 
             if (!deleted) {
                 return;
             }
 
-
-            await typewriterSleep(
-                betweenDelay
-            );
-
-
+            await typewriterSleep(betweenDelay);
         } while (loop);
     }
-
 
     /* =====================================================
      * Enter
      * ===================================================== */
 
     function enter() {
-
         if (destroyed) {
             return;
         }
-
 
         /*
          * Kalau sudah pernah selesai
@@ -847,99 +555,64 @@ function scrollTypewriter(
          * jangan jalankan lagi.
          */
 
-        if (
-            !deleteOnExit &&
-            started
-        ) {
+        if (!deleteOnExit && started) {
             return;
         }
-
 
         if (active) {
             return;
         }
 
-
         active = true;
-
 
         runTypewriter();
     }
-
 
     /* =====================================================
      * Exit
      * ===================================================== */
 
     function exit() {
-
         active = false;
-
 
         if (!deleteOnExit) {
             return;
         }
 
-
         stopAnimation();
-
 
         target.textContent = "";
     }
-
 
     /* =====================================================
      * Scroll
      * ===================================================== */
 
     function checkPosition() {
-
         if (destroyed) {
             return;
         }
 
+        const inside = isInTriggerZone();
 
-        const inside =
-            isInTriggerZone();
-
-
-        if (
-            inside &&
-            !active
-        ) {
-
+        if (inside && !active) {
             enter();
         }
 
-
-        if (
-            !inside &&
-            active
-        ) {
-
+        if (!inside && active) {
             exit();
         }
     }
-
 
     /* =====================================================
      * Events
      * ===================================================== */
 
-    window.addEventListener(
-        "scroll",
-        checkPosition,
-        {
-            passive: true
-        }
-    );
+    window.addEventListener("scroll", checkPosition, {
+        passive: true
+    });
 
-
-    window.addEventListener(
-        "resize",
-        checkPosition
-    );
-
+    window.addEventListener("resize", checkPosition);
 
     /*
      * Initial check
@@ -947,59 +620,38 @@ function scrollTypewriter(
 
     checkPosition();
 
-
     /* =====================================================
      * Controller
      * ===================================================== */
 
     return {
-
         destroy() {
-
             destroyed = true;
 
-
             stopAnimation();
 
+            window.removeEventListener("scroll", checkPosition);
 
-            window.removeEventListener(
-                "scroll",
-                checkPosition
-            );
-
-
-            window.removeEventListener(
-                "resize",
-                checkPosition
-            );
+            window.removeEventListener("resize", checkPosition);
         },
 
-
         reset() {
-
             stopAnimation();
-
 
             active = false;
 
             started = false;
 
-
             target.textContent = "";
-
 
             checkPosition();
         },
 
-
         start() {
-
             enter();
         },
 
-
         stop() {
-
             exit();
         }
     };
