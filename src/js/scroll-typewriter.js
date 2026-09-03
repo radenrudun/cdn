@@ -57,26 +57,205 @@ function typewriterAnimateChar(char, animation) {
      */
     span.style.display = "inline-block";
 
+    if (animation === "fade") {
+        span.animate([{ opacity: 0 }, { opacity: 1 }], {
+            duration: 200,
+            easing: "ease-out",
+            fill: "both"
+        });
+    }
+
+    if (animation === "slideUp") {
+        span.animate(
+            [
+                { opacity: 0, transform: "translateY(20px)" },
+                { opacity: 1, transform: "translateY(0)" }
+            ],
+            {
+                duration: 250,
+                easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "slideDown") {
+        span.animate(
+            [
+                { opacity: 0, transform: "translateY(-20px)" },
+                { opacity: 1, transform: "translateY(0)" }
+            ],
+            {
+                duration: 250,
+                easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "slideLeft") {
+        span.animate(
+            [
+                { opacity: 0, transform: "translateX(20px)" },
+                { opacity: 1, transform: "translateX(0)" }
+            ],
+            {
+                duration: 250,
+                easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "slideRight") {
+        span.animate(
+            [
+                { opacity: 0, transform: "translateX(-20px)" },
+                { opacity: 1, transform: "translateX(0)" }
+            ],
+            {
+                duration: 250,
+                easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
+                fill: "both"
+            }
+        );
+    }
+
     if (animation === "zoom") {
         span.animate(
             [
-                {
-                    opacity: 0.5,
-                    transform: "scale(0.5)"
-                },
-                {
-                    opacity: 1,
-                    transform: "scale(1.1)",
-                    offset: 0.7
-                },
-                {
-                    opacity: 1,
-                    transform: "scale(1)"
-                }
+                { opacity: 0.5, transform: "scale(0.5)" },
+                { opacity: 1, transform: "scale(1.1)", offset: 0.7 },
+                { opacity: 1, transform: "scale(1)" }
             ],
             {
                 duration: 220,
                 easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "rotate") {
+        span.animate(
+            [
+                { opacity: 0, transform: "rotate(-15deg) scale(0.8)" },
+                { opacity: 1, transform: "rotate(0) scale(1)" }
+            ],
+            {
+                duration: 300,
+                easing: "cubic-bezier(0.34, 1.56, 0.64, 1)", // spring-like
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "bounce") {
+        span.animate(
+            [
+                { opacity: 0, transform: "scale(0.3)" },
+                { opacity: 1, transform: "scale(1.2)", offset: 0.6 },
+                { opacity: 1, transform: "scale(0.9)", offset: 0.8 },
+                { opacity: 1, transform: "scale(1)" }
+            ],
+            {
+                duration: 400,
+                easing: "cubic-bezier(0.28, 1.3, 0.5, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "blur") {
+        span.animate(
+            [
+                { opacity: 0, filter: "blur(6px)" },
+                { opacity: 1, filter: "blur(0)" }
+            ],
+            {
+                duration: 250,
+                easing: "ease-out",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "typewriter") {
+        span.animate(
+            [
+                { opacity: 0, transform: "scaleY(0.2) translateY(8px)" },
+                { opacity: 1, transform: "scaleY(1) translateY(0)" }
+            ],
+            {
+                duration: 180,
+                easing: "cubic-bezier(0.2, 0.9, 0.4, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "pop") {
+        span.animate(
+            [
+                { opacity: 0, transform: "scale(0) rotate(-10deg)" },
+                {
+                    opacity: 0.8,
+                    transform: "scale(1.15) rotate(2deg)",
+                    offset: 0.5
+                },
+                { opacity: 1, transform: "scale(1) rotate(0)" }
+            ],
+            {
+                duration: 300,
+                easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "glitch") {
+        span.animate(
+            [
+                {
+                    opacity: 0,
+                    transform: "translateX(-4px) skewX(-5deg)",
+                    filter: "blur(2px)"
+                },
+                {
+                    opacity: 0.5,
+                    transform: "translateX(4px) skewX(5deg)",
+                    offset: 0.3
+                },
+                {
+                    opacity: 1,
+                    transform: "translateX(0) skewX(0)",
+                    filter: "blur(0)",
+                    offset: 0.7
+                },
+                { opacity: 1, transform: "translateX(0) skewX(0)" }
+            ],
+            {
+                duration: 350,
+                easing: "steps(3, end)",
+                fill: "both"
+            }
+        );
+    }
+
+    if (animation === "drop") {
+        span.animate(
+            [
+                { opacity: 0, transform: "translateY(-30px) scale(0.9)" },
+                {
+                    opacity: 0.6,
+                    transform: "translateY(5px) scale(1.05)",
+                    offset: 0.7
+                },
+                { opacity: 1, transform: "translateY(0) scale(1)" }
+            ],
+            {
+                duration: 280,
+                easing: "cubic-bezier(0.2, 0.9, 0.3, 1.2)",
                 fill: "both"
             }
         );
