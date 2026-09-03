@@ -61,12 +61,12 @@ function typewriterAnimateChar(char, animation) {
         span.animate(
             [
                 {
-                    opacity: 0,
+                    opacity: 0.5,
                     transform: "scale(0.5)"
                 },
                 {
                     opacity: 1,
-                    transform: "scale(1.08)",
+                    transform: "scale(1.1)",
                     offset: 0.7
                 },
                 {
