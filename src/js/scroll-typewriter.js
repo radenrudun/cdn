@@ -51,48 +51,101 @@ function reserveTextSpace(target, textList, enabled) {
         return;
     }
 
-    const clone = target.cloneNode(false);
+    const parent = target.parentElement;
 
-    clone.textContent = textList.reduce(
+    if (!parent) {
+        return;
+    }
+
+    /*
+     * Cari teks terpanjang
+     */
+    const longestText = textList.reduce(
         (longest, text) => (text.length > longest.length ? text : longest),
         ""
     );
 
     /*
-     * Jangan ikut terlihat
+     * Buat sizer
      */
-    clone.style.position = "absolute";
-    clone.style.visibility = "hidden";
-    clone.style.pointerEvents = "none";
+    const sizer = document.createElement(target.tagName);
+
+    sizer.textContent = longestText;
 
     /*
-     * Jangan gunakan width dari getBoundingClientRect.
-     * Biarkan CSS asli #pgHero menentukan width.
+     * Copy class asli
      */
-    clone.style.width = "100%";
+    sizer.className = target.className;
 
     /*
-     * Pastikan tinggi mengikuti isi
+     * Copy semua computed style yang
+     * mempengaruhi ukuran teks.
      */
-    clone.style.height = "auto";
-    clone.style.minHeight = "0";
-    clone.style.maxHeight = "none";
+    const style = getComputedStyle(target);
+
+    sizer.style.fontFamily = style.fontFamily;
+
+    sizer.style.fontSize = style.fontSize;
+
+    sizer.style.fontWeight = style.fontWeight;
+
+    sizer.style.fontStyle = style.fontStyle;
+
+    sizer.style.lineHeight = style.lineHeight;
+
+    sizer.style.letterSpacing = style.letterSpacing;
+
+    sizer.style.wordSpacing = style.wordSpacing;
+
+    sizer.style.textTransform = style.textTransform;
+
+    sizer.style.textIndent = style.textIndent;
+
+    sizer.style.whiteSpace = style.whiteSpace;
+
+    sizer.style.wordBreak = style.wordBreak;
+
+    sizer.style.overflowWrap = style.overflowWrap;
+
+    sizer.style.padding = style.padding;
+
+    sizer.style.border = style.border;
+
+    sizer.style.boxSizing = style.boxSizing;
 
     /*
-     * Masukkan ke parent yang sama
+     * Samakan width dengan target
      */
-    target.parentNode.appendChild(clone);
+    sizer.style.width = `${target.getBoundingClientRect().width}px`;
 
     /*
-     * Browser sekarang menghitung wrapping
-     * berdasarkan layout parent yang sebenarnya.
+     * Jangan terlihat
      */
-    const height = clone.offsetHeight;
-
-    clone.remove();
+    sizer.style.position = "absolute";
+    sizer.style.visibility = "hidden";
+    sizer.style.pointerEvents = "none";
 
     /*
-     * Simpan tinggi maksimum
+     * Jangan mempengaruhi layout parent
+     */
+    sizer.style.height = "auto";
+    sizer.style.minHeight = "0";
+    sizer.style.maxHeight = "none";
+
+    /*
+     * Tambahkan ke parent yang sama
+     */
+    parent.appendChild(sizer);
+
+    /*
+     * Paksa browser menghitung layout
+     */
+    const height = Math.ceil(sizer.getBoundingClientRect().height);
+
+    sizer.remove();
+
+    /*
+     * Reserve tinggi
      */
     target.style.minHeight = `${height}px`;
 }
@@ -127,6 +180,12 @@ function typewriter(element, texts, options = {}) {
 
     const textList = Array.isArray(texts) ? texts : [texts];
 
+    if (cursor) {
+        target.classList.add("typewriter-cursor");
+
+        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
+    }
+
     reserveTextSpace(target, textList, reserveSpace);
 
     const typingDelay = typewriterParseTime(speed);
@@ -140,12 +199,6 @@ function typewriter(element, texts, options = {}) {
     const betweenDelay = typewriterParseTime(between);
 
     /* Cursor */
-
-    if (cursor) {
-        target.classList.add("typewriter-cursor");
-
-        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
-    }
 
     target.textContent = "";
 
@@ -271,6 +324,12 @@ function scrollTypewriter(element, texts, options = {}) {
 
     const textList = Array.isArray(texts) ? texts.map(String) : [String(texts)];
 
+    if (cursor) {
+        target.classList.add("typewriter-cursor");
+
+        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
+    }
+
     reserveTextSpace(target, textList, reserveSpace);
 
     /* =====================================================
@@ -290,12 +349,6 @@ function scrollTypewriter(element, texts, options = {}) {
     /* =====================================================
      * Cursor
      * ===================================================== */
-
-    if (cursor) {
-        target.classList.add("typewriter-cursor");
-
-        target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
-    }
 
     /* =====================================================
      * Time
