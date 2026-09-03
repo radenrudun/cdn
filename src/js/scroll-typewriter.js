@@ -46,6 +46,61 @@ function typewriterGetElement(element) {
     return null;
 }
 
+function typewriterAnimateChar(char, animation) {
+    const span = document.createElement("span");
+
+    span.textContent = char;
+
+    /*
+     * Supaya transform scale hanya
+     * mempengaruhi karakter ini.
+     */
+    span.style.display = "inline-block";
+
+    if (animation === "zoom") {
+        span.animate(
+            [
+                {
+                    opacity: 0,
+                    transform: "scale(0.65)"
+                },
+                {
+                    opacity: 1,
+                    transform: "scale(1.08)",
+                    offset: 0.7
+                },
+                {
+                    opacity: 1,
+                    transform: "scale(1)"
+                }
+            ],
+            {
+                duration: 220,
+                easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                fill: "both"
+            }
+        );
+    }
+
+    return span;
+}
+function typewriterAppendChar(target, char, animation) {
+    /*
+     * Jangan bungkus whitespace dengan span.
+     * Kalau spasi dijadikan inline-block,
+     * wrapping teks bisa berubah.
+     */
+    if (/\s/.test(char)) {
+        target.appendChild(document.createTextNode(char));
+
+        return;
+    }
+
+    const span = typewriterAnimateChar(char, animation);
+
+    target.appendChild(span);
+}
+
 async function reserveTextSpace(target, textList, enabled) {
     if (!enabled || !target || !textList.length) {
         return;
@@ -107,7 +162,8 @@ async function typewriter(element, texts, options = {}) {
         deleteSpeed = "0.05s",
         pause = "1s",
         between = "0s",
-        reserveSpace = true
+        reserveSpace = true,
+        charAnimation = "zoom"
     } = options;
 
     const target = typewriterGetElement(element);
@@ -146,7 +202,7 @@ async function typewriter(element, texts, options = {}) {
 
     async function typeText(text) {
         for (const char of text) {
-            target.textContent += char;
+            typewriterAppendChar(target, char, charAnimation);
 
             await typewriterSleep(typingDelay);
         }
@@ -156,12 +212,15 @@ async function typewriter(element, texts, options = {}) {
 
     async function deleteText(text) {
         for (let i = text.length; i > 1; i--) {
-            target.textContent = text.slice(0, i - 1);
+            const last = target.lastChild;
+
+            if (last) {
+                last.remove();
+            }
 
             await typewriterSleep(removeDelay);
         }
     }
-
     /* Start */
 
     async function start() {
@@ -251,7 +310,8 @@ async function scrollTypewriter(element, texts, options = {}) {
 
         deleteOnExit = true,
 
-        reserveSpace = true
+        reserveSpace = true,
+        charAnimation = "zoom"
     } = options;
 
     const target = typewriterGetElement(element);
@@ -426,7 +486,7 @@ async function scrollTypewriter(element, texts, options = {}) {
                 return false;
             }
 
-            target.textContent += char;
+            typewriterAppendChar(target, char, charAnimation);
 
             await typewriterSleep(typingDelay);
         }
@@ -444,7 +504,11 @@ async function scrollTypewriter(element, texts, options = {}) {
                 return false;
             }
 
-            target.textContent = text.slice(0, i - 1);
+            const last = target.lastChild;
+
+            if (last) {
+                last.remove();
+            }
 
             await typewriterSleep(removeDelay);
         }
