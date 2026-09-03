@@ -265,9 +265,9 @@ function typewriterAnimateChar(char, animation) {
 }
 function typewriterAppendChar(target, char, animation) {
     /*
-     * Jangan bungkus whitespace dengan span.
-     * Kalau spasi dijadikan inline-block,
-     * wrapping teks bisa berubah.
+     * Whitespace:
+     * buat text node biasa supaya spacing
+     * dan wrapping tetap natural.
      */
     if (/\s/.test(char)) {
         target.appendChild(document.createTextNode(char));
@@ -275,9 +275,39 @@ function typewriterAppendChar(target, char, animation) {
         return;
     }
 
+    /*
+     * Cek node terakhir.
+     *
+     * Kalau node terakhir adalah word container,
+     * berarti kita masih berada di kata yang sama.
+     */
+    let word = target.lastChild;
+
+    if (
+        !word ||
+        word.nodeType !== Node.ELEMENT_NODE ||
+        !word.classList.contains("typewriter-word")
+    ) {
+        word = document.createElement("span");
+
+        word.className = "typewriter-word";
+
+        /*
+         * Satu kata dianggap sebagai satu unit
+         * ketika browser melakukan line wrapping.
+         */
+        word.style.display = "inline-block";
+
+        target.appendChild(word);
+    }
+
+    /*
+     * Karakter tetap dibuat sebagai span sendiri
+     * agar animasi tetap berjalan per huruf.
+     */
     const span = typewriterAnimateChar(char, animation);
 
-    target.appendChild(span);
+    word.appendChild(span);
 }
 
 async function reserveTextSpace(target, textList, enabled) {
@@ -391,10 +421,39 @@ async function typewriter(element, texts, options = {}) {
 
     async function deleteText(text) {
         for (let i = text.length; i > 1; i--) {
-            const last = target.lastChild;
+            let word = target.lastElementChild;
 
-            if (last) {
-                last.remove();
+            /*
+             * Kalau node terakhir bukan word,
+             * berarti ada whitespace di belakang.
+             */
+            if (!word || !word.classList.contains("typewriter-word")) {
+                const lastNode = target.lastChild;
+
+                if (lastNode) {
+                    lastNode.remove();
+                }
+
+                word = target.lastElementChild;
+            }
+
+            /*
+             * Hapus karakter terakhir dari word.
+             */
+            if (word) {
+                const lastChar = word.lastElementChild;
+
+                if (lastChar) {
+                    lastChar.remove();
+                }
+
+                /*
+                 * Kalau kata sudah kosong,
+                 * hapus word container.
+                 */
+                if (!word.lastElementChild) {
+                    word.remove();
+                }
             }
 
             await typewriterSleep(removeDelay);
@@ -683,10 +742,37 @@ async function scrollTypewriter(element, texts, options = {}) {
                 return false;
             }
 
-            const last = target.lastChild;
+            let word = target.lastElementChild;
 
-            if (last) {
-                last.remove();
+            /*
+             * Tangani whitespace terakhir.
+             */
+            if (!word || !word.classList.contains("typewriter-word")) {
+                const lastNode = target.lastChild;
+
+                if (lastNode) {
+                    lastNode.remove();
+                }
+
+                word = target.lastElementChild;
+            }
+
+            /*
+             * Hapus satu karakter.
+             */
+            if (word) {
+                const lastChar = word.lastElementChild;
+
+                if (lastChar) {
+                    lastChar.remove();
+                }
+
+                /*
+                 * Hapus container kalau kata sudah kosong.
+                 */
+                if (!word.lastElementChild) {
+                    word.remove();
+                }
             }
 
             await typewriterSleep(removeDelay);
