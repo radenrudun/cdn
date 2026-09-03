@@ -46,106 +46,46 @@ function typewriterGetElement(element) {
     return null;
 }
 
-function reserveTextSpace(target, textList, enabled) {
+async function reserveTextSpace(target, textList, enabled) {
     if (!enabled || !target || !textList.length) {
         return;
     }
 
-    const parent = target.parentElement;
-
-    if (!parent) {
-        return;
+    /*
+     * Tunggu font selesai dimuat.
+     * Penting karena #pgHero menggunakan TikTok Sans.
+     */
+    if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
     }
 
-    /*
-     * Cari teks terpanjang
-     */
     const longestText = textList.reduce(
         (longest, text) => (text.length > longest.length ? text : longest),
         ""
     );
 
+    const originalText = target.textContent;
+    const originalMinHeight = target.style.minHeight;
+
     /*
-     * Buat sizer
+     * Masukkan teks terpanjang langsung
+     * ke element asli agar browser menghitung
+     * menggunakan layout sebenarnya.
      */
-    const sizer = document.createElement(target.tagName);
-
-    sizer.textContent = longestText;
+    target.textContent = longestText;
 
     /*
-     * Copy class asli
+     * Paksa browser menghitung layout.
      */
-    sizer.className = target.className;
+    const height = Math.ceil(target.getBoundingClientRect().height);
 
     /*
-     * Copy semua computed style yang
-     * mempengaruhi ukuran teks.
+     * Kembalikan teks awal.
      */
-    const style = getComputedStyle(target);
-
-    sizer.style.fontFamily = style.fontFamily;
-
-    sizer.style.fontSize = style.fontSize;
-
-    sizer.style.fontWeight = style.fontWeight;
-
-    sizer.style.fontStyle = style.fontStyle;
-
-    sizer.style.lineHeight = style.lineHeight;
-
-    sizer.style.letterSpacing = style.letterSpacing;
-
-    sizer.style.wordSpacing = style.wordSpacing;
-
-    sizer.style.textTransform = style.textTransform;
-
-    sizer.style.textIndent = style.textIndent;
-
-    sizer.style.whiteSpace = style.whiteSpace;
-
-    sizer.style.wordBreak = style.wordBreak;
-
-    sizer.style.overflowWrap = style.overflowWrap;
-
-    sizer.style.padding = style.padding;
-
-    sizer.style.border = style.border;
-
-    sizer.style.boxSizing = style.boxSizing;
+    target.textContent = originalText;
 
     /*
-     * Samakan width dengan target
-     */
-    sizer.style.width = `${target.getBoundingClientRect().width}px`;
-
-    /*
-     * Jangan terlihat
-     */
-    sizer.style.position = "absolute";
-    sizer.style.visibility = "hidden";
-    sizer.style.pointerEvents = "none";
-
-    /*
-     * Jangan mempengaruhi layout parent
-     */
-    sizer.style.height = "auto";
-    sizer.style.minHeight = "0";
-    sizer.style.maxHeight = "none";
-
-    /*
-     * Tambahkan ke parent yang sama
-     */
-    parent.appendChild(sizer);
-
-    /*
-     * Paksa browser menghitung layout
-     */
-    const height = Math.ceil(sizer.getBoundingClientRect().height);
-
-    sizer.remove();
-
-    /*
-     * Reserve tinggi
+     * Reserve tinggi berdasarkan hasil pengukuran.
      */
     target.style.minHeight = `${height}px`;
 }
@@ -154,7 +94,7 @@ function reserveTextSpace(target, textList, enabled) {
  * V1 - Normal Typewriter
  * ========================================================= */
 
-function typewriter(element, texts, options = {}) {
+async function typewriter(element, texts, options = {}) {
     const {
         speed = "0.08s",
         delay = "0s",
@@ -186,7 +126,7 @@ function typewriter(element, texts, options = {}) {
         target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
     }
 
-    reserveTextSpace(target, textList, reserveSpace);
+    await reserveTextSpace(target, textList, reserveSpace);
 
     const typingDelay = typewriterParseTime(speed);
 
@@ -267,7 +207,7 @@ function typewriter(element, texts, options = {}) {
  * V2 - Scroll Typewriter
  * ========================================================= */
 
-function scrollTypewriter(element, texts, options = {}) {
+async function scrollTypewriter(element, texts, options = {}) {
     const {
         /*
          * Trigger:
@@ -330,7 +270,7 @@ function scrollTypewriter(element, texts, options = {}) {
         target.style.setProperty("--typewriter-cursor", `"${cursorChar}"`);
     }
 
-    reserveTextSpace(target, textList, reserveSpace);
+    await reserveTextSpace(target, textList, reserveSpace);
 
     /* =====================================================
      * State
