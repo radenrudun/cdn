@@ -1,8 +1,8 @@
 /**
  * viewMotion.js
  * Lightweight on-scroll animation library
- * Author: (your name)
- * Version: 2.0.0
+ * Author: Raden
+ * Version: 3.0.0
  *
  * Usage:
  *   // Trigger mode (default) — animasi saat masuk viewport
@@ -264,6 +264,11 @@
          if (this.options.mode === "scrub") {
             this._initScrub();
          } else {
+            this.elements.forEach(el => {
+               const opt = el.__vmOptions || this.options;
+               this._applyInitialStyle(el, opt);
+            });
+
             this._buildObserver();
             this._observeAll();
          }
@@ -274,7 +279,18 @@
          const opt = this.options;
 
          if (typeof IntersectionObserver === "undefined") {
-            this.elements.forEach(el => this._play(el, 0, true, opt));
+            this.elements.forEach(el => {
+               const opt = el.__vmOptions || this.options;
+
+               el.style.opacity = "";
+               el.style.transform = "";
+               el.style.filter = "";
+               el.style.visibility = "";
+               el.style.willChange = "auto";
+
+               this._play(el, 0, true, opt);
+            });
+
             return;
          }
 
@@ -368,6 +384,27 @@
             this._rafId = null;
             this._applyScrub();
          });
+      }
+
+      _applyInitialStyle(el, opt) {
+         const preset = PRESETS[opt.animation] || PRESETS["fade-up"];
+         const keyframes = preset(opt);
+         const firstFrame = keyframes[0] || {};
+
+         if (firstFrame.opacity !== undefined) {
+            el.style.opacity = firstFrame.opacity;
+         }
+
+         if (firstFrame.transform !== undefined) {
+            el.style.transform = firstFrame.transform;
+         }
+
+         if (firstFrame.filter !== undefined) {
+            el.style.filter = firstFrame.filter;
+         }
+
+         el.style.visibility = "hidden";
+         el.style.willChange = "opacity, transform, filter";
       }
 
       _applyScrub() {
@@ -482,22 +519,37 @@
          const preset = PRESETS[opt.animation] || PRESETS["fade-up"];
          const keyframes = preset(opt);
 
-         if (!this.started.has(el)) {
-            try {
-               el.style.opacity = keyframes[0].opacity ?? 1;
-               if (keyframes[0].transform)
-                  el.style.transform = keyframes[0].transform;
-               if (keyframes[0].filter) el.style.filter = keyframes[0].filter;
-            } catch (e) {}
-         }
-
          const run = () => {
-            const anim = el.animate(keyframes, {
-               duration: opt.duration,
-               delay: 0,
-               easing: opt.easing,
-               fill: "both"
-            });
+            const previousAnimation = el.__vmAnimation;
+
+            if (previousAnimation) {
+               try {
+                  previousAnimation.cancel();
+               } catch (error) {}
+            }
+
+            el.style.visibility = "visible";
+
+            let anim;
+
+            try {
+               anim = el.animate(keyframes, {
+                  duration: Math.max(0, Number(opt.duration) || 0),
+                  delay: 0,
+                  easing: opt.easing,
+                  fill: "both"
+               });
+            } catch (error) {
+               console.warn("[ViewMotion] Animasi gagal:", error);
+
+               el.style.opacity = "";
+               el.style.transform = "";
+               el.style.filter = "";
+               el.style.visibility = "";
+               el.style.willChange = "auto";
+
+               return;
+            }
 
             if (opt.speed && opt.speed !== 1) {
                anim.playbackRate = opt.speed;
@@ -506,41 +558,51 @@
             el.__vmAnimation = anim;
             this.started.add(el);
 
-            if (typeof opt.onStart === "function") opt.onStart(el, anim);
-            if (typeof opt.onEnter === "function") opt.onEnter(el, anim);
+            if (typeof opt.onStart === "function") {
+               opt.onStart(el, anim);
+            }
+
+            if (typeof opt.onEnter === "function") {
+               opt.onEnter(el, anim);
+            }
 
             anim.onfinish = () => {
-               try {
+               if (typeof opt.onFinish === "function") {
+                  opt.onFinish(el, anim);
+               }
+
+               if (opt.repeat === true) {
+                  anim.play();
+               } else if (typeof opt.repeat === "number" && opt.repeat > 0) {
+                  opt.repeat -= 1;
+                  anim.play();
+               } else {
                   el.style.opacity = "";
                   el.style.transform = "";
                   el.style.filter = "";
-               } catch (e) {}
-
-               if (typeof opt.onFinish === "function") opt.onFinish(el, anim);
-
-               if (opt.repeat === true) {
-                  try {
-                     anim.play();
-                  } catch (e) {}
-               } else if (typeof opt.repeat === "number" && opt.repeat > 0) {
-                  opt.repeat -= 1;
-                  try {
-                     anim.play();
-                  } catch (e) {}
+                  el.style.visibility = "";
+                  el.style.willChange = "auto";
                }
             };
          };
 
-         if (immediate || delay <= 0) run();
-         else setTimeout(run, delay);
+         if (immediate || delay <= 0) {
+            run();
+         } else {
+            setTimeout(run, delay);
+         }
       }
 
       _reset(el) {
          if (el.__vmAnimation) {
             try {
                el.__vmAnimation.cancel();
-            } catch (e) {}
+            } catch (error) {}
          }
+
+         const opt = el.__vmOptions || this.options;
+
+         this._applyInitialStyle(el, opt);
          this.started.delete(el);
       }
 
@@ -609,6 +671,11 @@
          if (this.options.mode === "scrub") {
             this._initScrub();
          } else {
+            this.elements.forEach(el => {
+               const opt = el.__vmOptions || this.options;
+               this._applyInitialStyle(el, opt);
+            });
+
             this._buildObserver();
             this._observeAll();
          }
