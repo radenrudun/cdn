@@ -231,7 +231,7 @@
       return [];
    }
 
-   function parseValue(value, fallback) {
+   function parseValue(value, fallback = undefined) {
       if (value === undefined || value === null || value === "") {
          return fallback;
       }
@@ -243,20 +243,41 @@
 
    function getDataOptions(element) {
       const dataset = element.dataset;
+      const options = {};
 
-      return {
-         animation: dataset.vm || undefined,
-         duration: parseValue(dataset.vmDuration, undefined),
-         delay: parseValue(dataset.vmDelay, undefined),
-         easing: dataset.vmEasing || undefined,
-         threshold: parseValue(dataset.vmThreshold, undefined),
-         distance: dataset.vmDistance || undefined,
-         once:
-            dataset.vmOnce === undefined
-               ? undefined
-               : dataset.vmOnce !== "false",
-         rootMargin: dataset.vmRootMargin || undefined
-      };
+      if (dataset.vm !== undefined) {
+         options.animation = dataset.vm;
+      }
+
+      if (dataset.vmDuration !== undefined) {
+         options.duration = parseValue(dataset.vmDuration);
+      }
+
+      if (dataset.vmDelay !== undefined) {
+         options.delay = parseValue(dataset.vmDelay);
+      }
+
+      if (dataset.vmEasing !== undefined) {
+         options.easing = dataset.vmEasing;
+      }
+
+      if (dataset.vmThreshold !== undefined) {
+         options.threshold = parseValue(dataset.vmThreshold);
+      }
+
+      if (dataset.vmDistance !== undefined) {
+         options.distance = dataset.vmDistance;
+      }
+
+      if (dataset.vmOnce !== undefined) {
+         options.once = dataset.vmOnce !== "false";
+      }
+
+      if (dataset.vmRootMargin !== undefined) {
+         options.rootMargin = dataset.vmRootMargin;
+      }
+
+      return options;
    }
 
    function normalizeOptions(options = {}) {
