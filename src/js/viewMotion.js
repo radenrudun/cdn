@@ -2,7 +2,7 @@
  * viewMotion.js
  * Lightweight on-scroll animation library
  * Author: Raden
- * Version: 3.0.0
+ * Version: 3.2.0
  *
  * Usage:
  *   // Trigger mode (default) — animasi saat masuk viewport
@@ -314,14 +314,18 @@
                         false,
                         elOpt
                      );
+
                      this.triggered.add(el);
 
                      if (elOpt.once && this.observer) {
                         this.observer.unobserve(el);
                      }
                   } else {
-                     if (!elOpt.once && elOpt.reverse) this._reset(el);
-                     if (typeof elOpt.onExit === "function") elOpt.onExit(el);
+                     if (!elOpt.once) this._reset(el);
+
+                     if (typeof elOpt.onExit === "function") {
+                        elOpt.onExit(el);
+                     }
                   }
                });
             },
