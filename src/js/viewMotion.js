@@ -2,28 +2,38 @@
  * viewMotion.js
  * Lightweight on-scroll animation library
  * Author: (your name)
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Usage:
- *   // Otomatis via data-vm
- *   <div data-vm="fade-up" data-vm-duration="600" data-vm-delay="100"></div>
+ *   // Trigger mode (default) — animasi saat masuk viewport
+ *   <div data-vm="fade-up"></div>
+ *
+ *   // Scrub mode — animasi mengikuti scroll progress
+ *   <div data-vm="zoom"
+ *        data-vm-mode="scrub"
+ *        data-vm-start="top bottom"
+ *        data-vm-end="bottom top"></div>
+ *
+ *   // Pin + scrub
+ *   <div data-vm="fade-up"
+ *        data-vm-mode="scrub"
+ *        data-vm-pin="true"
+ *        data-vm-start="top top"
+ *        data-vm-end="bottom top"></div>
  *
  *   // Manual
- *   viewMotion("#hero", { animation: "zoom", duration: 400 });
- *   viewMotion(".card", { animation: "slideLeft", stagger: 100 });
- *
- *   // Init semua otomatis
- *   viewMotion.init();
+ *   viewMotion("#hero", { animation: "zoom", mode: "scrub" });
+ *   viewMotion(".card", { animation: "fade-up", stagger: 100 });
  */
 
 (function (global) {
    "use strict";
 
    // ============================================================
-   // PRESET ANIMASI
+   // PRESETS ANIMASI
    // ============================================================
    const PRESETS = {
-      fade: opt => [{ opacity: 0 }, { opacity: 1 }],
+      fade: () => [{ opacity: 0 }, { opacity: 1 }],
       "fade-up": () => [
          { opacity: 0, transform: "translateY(40px)" },
          { opacity: 1, transform: "translateY(0)" }
@@ -128,21 +138,39 @@
    // DEFAULT OPTIONS
    // ============================================================
    const DEFAULTS = {
+      // Basic
       animation: "fade-up",
       duration: 600,
       delay: 0,
       easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-      threshold: 0.15, // 0 - 1
-      rootMargin: "0px", // contoh: "0px 0px -50px 0px"
-      once: true, // hanya animasi sekali
-      stagger: 0, // jeda per element dalam ms (khusus selector multi)
-      reverse: false, // animasi mundur saat keluar viewport
+
+      // Trigger mode
+      threshold: 0.15,
+      rootMargin: "0px",
+      once: true,
+      stagger: 0,
+      reverse: false,
+
+      // Scroll mode
+      mode: "trigger", // "trigger" | "scrub"
+      start: "top bottom", // [el-edge] [viewport-pos]
+      end: "bottom top", // [el-edge] [viewport-pos]
+      smooth: 0, // 0–1 lerp smoothing (khusus scrub)
+      pin: false, // pin element di range start-end
+      pinSpacing: true,
+      direction: "both", // "down" | "up" | "both"
+      repeat: false, // false | true | number
+      speed: 1, // playback rate
+
+      // Attributes
       attribute: "data-vm",
-      useDataAttributes: true,
-      onStart: null, // (el, anim) => {}
-      onFinish: null, // (el, anim) => {}
-      onEnter: null, // alias onStart
-      onExit: null // (el) => {} saat keluar viewport (jika once=false)
+
+      // Callbacks
+      onStart: null, // (el, anim)
+      onFinish: null, // (el, anim)
+      onEnter: null, // (el, anim)
+      onExit: null, // (el)
+      onProgress: null // (el, progress, direction) — scrub only
    };
 
    // ============================================================
@@ -169,8 +197,56 @@
       return isNaN(n) ? fallback : n;
    };
 
+   /**
+    * Parse "top bottom" -> { el: "top", vp: "bottom" }
+    * Support: top | center | bottom | 80% | 100vh | 200px
+    */
+   function parsePos(str) {
+      const s = String(str || "").trim() || "top bottom";
+      const parts = s.split(/\s+/);
+      return {
+         el: parts[0] || "top",
+         vp: parts[1] || "bottom"
+      };
+   }
+
+   /**
+    * Convert viewport value ke pixel
+    */
+   function vpToPx(vp, vpHeight) {
+      if (typeof vp === "number") return vp;
+      const s = String(vp);
+      if (s.endsWith("%")) return (parseFloat(s) / 100) * vpHeight;
+      if (s.endsWith("vh")) return (parseFloat(s) / 100) * vpHeight;
+      if (s.endsWith("px")) return parseFloat(s);
+      if (s === "top") return 0;
+      if (s === "center") return vpHeight / 2;
+      if (s === "bottom") return vpHeight;
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+   }
+
+   /**
+    * Convert element-edge ke posisi dokumen Y
+    */
+   function elToDocY(pos, elTop, elBottom) {
+      if (pos === "top") return elTop;
+      if (pos === "bottom") return elBottom;
+      if (pos === "center") return (elTop + elBottom) / 2;
+      return elTop;
+   }
+
+   /**
+    * Hitung scrollY ketika elemen [elEdge] menyentuh viewport [vpPos]
+    */
+   function calcScrollY(elTop, elBottom, elPos, vpPos, vpHeight) {
+      const eY = elToDocY(elPos, elTop, elBottom);
+      const vY = vpToPx(vpPos, vpHeight);
+      return eY - vY;
+   }
+
    // ============================================================
-   // CLASS VIEWMOTION
+   // CLASS VIEWMOTION INSTANCE
    // ============================================================
    class ViewMotionInstance {
       constructor(target, options = {}) {
@@ -179,51 +255,57 @@
          this.observer = null;
          this.started = new WeakSet();
          this.triggered = new WeakSet();
-         this._buildObserver();
-         this._observeAll();
+         this.scrubMap = new WeakMap();
+         this._rafId = null;
+         this._lastProgress = new WeakMap();
+         this._lastScrollY = window.scrollY || window.pageYOffset || 0;
+         this._resizeBound = null;
+
+         if (this.options.mode === "scrub") {
+            this._initScrub();
+         } else {
+            this._buildObserver();
+            this._observeAll();
+         }
       }
 
+      // ============ TRIGGER MODE ============
       _buildObserver() {
          const opt = this.options;
 
-         // kalau IntersectionObserver gak ada -> langsung tampil
          if (typeof IntersectionObserver === "undefined") {
-            this.elements.forEach(el => this._play(el, 0, true));
+            this.elements.forEach(el => this._play(el, 0, true, opt));
             return;
          }
 
          this.observer = new IntersectionObserver(
             entries => {
-               entries.forEach((entry, i) => {
+               entries.forEach(entry => {
                   const el = entry.target;
-                  const elOptions = el.__vmOptions || this.options;
+                  const elOpt = el.__vmOptions || opt;
 
                   if (entry.isIntersecting) {
-                     if (elOptions.once && this.triggered.has(el)) return;
-                     const stagger = elOptions.stagger || 0;
+                     if (elOpt.once && this.triggered.has(el)) return;
+
                      const idx = this.elements.indexOf(el);
+                     const stagger = elOpt.stagger || 0;
                      const delayExtra =
                         stagger > 0 && idx > -1 ? idx * stagger : 0;
 
                      this._play(
                         el,
-                        (elOptions.delay || 0) + delayExtra,
+                        (elOpt.delay || 0) + delayExtra,
                         false,
-                        elOptions
+                        elOpt
                      );
                      this.triggered.add(el);
 
-                     if (elOptions.once && this.observer) {
+                     if (elOpt.once && this.observer) {
                         this.observer.unobserve(el);
                      }
                   } else {
-                     // keluar viewport
-                     if (!elOptions.once && elOptions.reverse) {
-                        this._reset(el);
-                     }
-                     if (typeof elOptions.onExit === "function") {
-                        elOptions.onExit(el);
-                     }
+                     if (!elOpt.once && elOpt.reverse) this._reset(el);
+                     if (typeof elOpt.onExit === "function") elOpt.onExit(el);
                   }
                });
             },
@@ -239,12 +321,167 @@
          this.elements.forEach(el => this.observer.observe(el));
       }
 
+      // ============ SCRUB MODE ============
+      _initScrub() {
+         this.elements.forEach(el => {
+            const elOpt = el.__vmOptions || this.options;
+            const preset = PRESETS[elOpt.animation] || PRESETS["fade-up"];
+            const keyframes = preset(elOpt);
+
+            el.style.willChange = "transform, opacity, filter";
+
+            const anim = el.animate(keyframes, {
+               duration: elOpt.duration,
+               easing: elOpt.easing,
+               fill: "both"
+            });
+            anim.pause();
+            anim.currentTime = 0;
+
+            if (elOpt.speed && elOpt.speed !== 1) {
+               anim.playbackRate = elOpt.speed;
+            }
+
+            this.scrubMap.set(el, { anim, opt: elOpt });
+
+            if (elOpt.pin) this._setupPin(el, elOpt);
+         });
+
+         this._onScrollBound = () => this._scheduleScrub();
+         this._resizeBound = () => {
+            this._scheduleScrub();
+         };
+
+         window.addEventListener("scroll", this._onScrollBound, {
+            passive: true
+         });
+         window.addEventListener("resize", this._resizeBound, {
+            passive: true
+         });
+
+         this._scheduleScrub();
+      }
+
+      _scheduleScrub() {
+         if (this._rafId) return;
+         this._rafId = requestAnimationFrame(() => {
+            this._rafId = null;
+            this._applyScrub();
+         });
+      }
+
+      _applyScrub() {
+         const vpHeight = window.innerHeight;
+         const scrollY = window.scrollY || window.pageYOffset || 0;
+         const goingDown = scrollY >= this._lastScrollY;
+         this._lastScrollY = scrollY;
+
+         let needsMore = false;
+
+         this.elements.forEach(el => {
+            const entry = this.scrubMap.get(el);
+            if (!entry) return;
+            const { anim, opt } = entry;
+
+            const rect = el.getBoundingClientRect();
+            const elTop = rect.top + scrollY;
+            const elBottom = rect.bottom + scrollY;
+
+            const startPos = parsePos(opt.start);
+            const endPos = parsePos(opt.end);
+
+            const startY = calcScrollY(
+               elTop,
+               elBottom,
+               startPos.el,
+               startPos.vp,
+               vpHeight
+            );
+            const endY = calcScrollY(
+               elTop,
+               elBottom,
+               endPos.el,
+               endPos.vp,
+               vpHeight
+            );
+
+            const range = endY - startY;
+            let target = range === 0 ? 0 : (scrollY - startY) / range;
+            target = Math.max(0, Math.min(1, target));
+
+            // Direction filter
+            if (opt.direction === "down" && !goingDown) {
+               target = anim.currentTime / opt.duration;
+            } else if (opt.direction === "up" && goingDown) {
+               target = anim.currentTime / opt.duration;
+            }
+
+            // Smoothing (lerp)
+            let finalP = target;
+            if (opt.smooth > 0) {
+               const prev = anim.currentTime / opt.duration;
+               const k = Math.min(1, Math.max(0, opt.smooth));
+               finalP = prev + (target - prev) * (1 - Math.pow(1 - k, 3));
+               if (Math.abs(finalP - target) > 0.001) needsMore = true;
+            }
+
+            anim.currentTime = finalP * opt.duration;
+
+            if (typeof opt.onProgress === "function") {
+               opt.onProgress(el, target, goingDown ? "down" : "up");
+            }
+         });
+
+         if (needsMore) this._scheduleScrub();
+      }
+
+      _setupPin(el, opt) {
+         if (el.__vmPinWrapper) return;
+
+         const rect = el.getBoundingClientRect();
+         const scrollY = window.scrollY || window.pageYOffset || 0;
+         const elTop = rect.top + scrollY;
+         const elBottom = rect.bottom + scrollY;
+         const vpHeight = window.innerHeight;
+
+         const startPos = parsePos(opt.start);
+         const endPos = parsePos(opt.end);
+         const startY = calcScrollY(
+            elTop,
+            elBottom,
+            startPos.el,
+            startPos.vp,
+            vpHeight
+         );
+         const endY = calcScrollY(
+            elTop,
+            elBottom,
+            endPos.el,
+            endPos.vp,
+            vpHeight
+         );
+         const range = Math.max(0, endY - startY);
+         const h = el.offsetHeight;
+
+         const wrapper = document.createElement("div");
+         wrapper.className = "vm-pin-wrapper";
+         wrapper.style.position = "relative";
+         wrapper.style.height = opt.pinSpacing ? range + h + "px" : h + "px";
+
+         el.parentNode.insertBefore(wrapper, el);
+         wrapper.appendChild(el);
+
+         el.style.position = "sticky";
+         el.style.top = vpToPx(startPos.vp, vpHeight) + "px";
+         el.__vmPinWrapper = wrapper;
+      }
+
+      // ============ CORE PLAY ============
       _play(el, delay, immediate = false, optsOverride = null) {
          const opt = optsOverride || el.__vmOptions || this.options;
          const preset = PRESETS[opt.animation] || PRESETS["fade-up"];
          const keyframes = preset(opt);
 
-         // set state awal biar gak "flash"
          if (!this.started.has(el)) {
             try {
                el.style.opacity = keyframes[0].opacity ?? 1;
@@ -262,6 +499,10 @@
                fill: "both"
             });
 
+            if (opt.speed && opt.speed !== 1) {
+               anim.playbackRate = opt.speed;
+            }
+
             el.__vmAnimation = anim;
             this.started.add(el);
 
@@ -274,7 +515,19 @@
                   el.style.transform = "";
                   el.style.filter = "";
                } catch (e) {}
+
                if (typeof opt.onFinish === "function") opt.onFinish(el, anim);
+
+               if (opt.repeat === true) {
+                  try {
+                     anim.play();
+                  } catch (e) {}
+               } else if (typeof opt.repeat === "number" && opt.repeat > 0) {
+                  opt.repeat -= 1;
+                  try {
+                     anim.play();
+                  } catch (e) {}
+               }
             };
          };
 
@@ -291,9 +544,7 @@
          this.started.delete(el);
       }
 
-      /**
-       * Trigger manual (play semua)
-       */
+      // ============ PUBLIC METHODS ============
       play() {
          this.elements.forEach((el, i) => {
             const opt = el.__vmOptions || this.options;
@@ -303,45 +554,64 @@
          return this;
       }
 
-      /**
-       * Reset semua animasi
-       */
       reset() {
          this.elements.forEach(el => this._reset(el));
          return this;
       }
 
-      /**
-       * Tambah element baru
-       */
       add(target) {
          const els = toArray(target);
          els.forEach(el => {
             this.elements.push(el);
             if (this.observer) this.observer.observe(el);
+            if (this.options.mode === "scrub") {
+               const elOpt = el.__vmOptions || this.options;
+               const preset = PRESETS[elOpt.animation] || PRESETS["fade-up"];
+               const kf = preset(elOpt);
+               const anim = el.animate(kf, {
+                  duration: elOpt.duration,
+                  easing: elOpt.easing,
+                  fill: "both"
+               });
+               anim.pause();
+               anim.currentTime = 0;
+               this.scrubMap.set(el, { anim, opt: elOpt });
+               if (elOpt.pin) this._setupPin(el, elOpt);
+            }
          });
+         if (this._scheduleScrub) this._scheduleScrub();
          return this;
       }
 
-      /**
-       * Hapus observer
-       */
       destroy() {
          if (this.observer) {
             this.elements.forEach(el => this.observer.unobserve(el));
             this.observer.disconnect();
             this.observer = null;
          }
+         if (this._onScrollBound) {
+            window.removeEventListener("scroll", this._onScrollBound);
+            this._onScrollBound = null;
+         }
+         if (this._resizeBound) {
+            window.removeEventListener("resize", this._resizeBound);
+            this._resizeBound = null;
+         }
+         if (this._rafId) {
+            cancelAnimationFrame(this._rafId);
+            this._rafId = null;
+         }
          return this;
       }
 
-      /**
-       * Refresh (re-observe)
-       */
       refresh() {
          this.destroy();
-         this._buildObserver();
-         this._observeAll();
+         if (this.options.mode === "scrub") {
+            this._initScrub();
+         } else {
+            this._buildObserver();
+            this._observeAll();
+         }
          return this;
       }
    }
@@ -358,12 +628,8 @@
       return inst;
    }
 
-   // Alias
    viewMotion.animate = viewMotion;
 
-   /**
-    * Init otomatis dari element dengan atribut data-vm
-    */
    viewMotion.init = function (root = document, overrideOptions = {}) {
       const attr = overrideOptions.attribute || DEFAULTS.attribute;
       const nodes = root.querySelectorAll(`[${attr}]`);
@@ -397,12 +663,37 @@
             stagger: parseNumber(
                el.getAttribute(`${attr}-stagger`),
                DEFAULTS.stagger
-            )
+            ),
+
+            // Scroll mode
+            mode: el.getAttribute(`${attr}-mode`) || DEFAULTS.mode,
+            start: el.getAttribute(`${attr}-start`) || DEFAULTS.start,
+            end: el.getAttribute(`${attr}-end`) || DEFAULTS.end,
+            smooth: parseNumber(
+               el.getAttribute(`${attr}-smooth`),
+               DEFAULTS.smooth
+            ),
+            pin: el.hasAttribute(`${attr}-pin`)
+               ? parseBool(el.getAttribute(`${attr}-pin`))
+               : DEFAULTS.pin,
+            pinSpacing: el.hasAttribute(`${attr}-pin-spacing`)
+               ? parseBool(el.getAttribute(`${attr}-pin-spacing`))
+               : DEFAULTS.pinSpacing,
+            direction:
+               el.getAttribute(`${attr}-direction`) || DEFAULTS.direction,
+            repeat: (() => {
+               if (!el.hasAttribute(`${attr}-repeat`)) return DEFAULTS.repeat;
+               const v = el.getAttribute(`${attr}-repeat`);
+               if (v === "" || v === "true") return true;
+               if (v === "false") return false;
+               const n = parseInt(v, 10);
+               return isNaN(n) ? false : n;
+            })(),
+            speed: parseNumber(el.getAttribute(`${attr}-speed`), DEFAULTS.speed)
          };
          el.__vmOptions = opts;
 
          const inst = new ViewMotionInstance(el, opts);
-         // simpan biar trigger bisa dipanggil
          el.__vmInstance = inst;
          created.push(inst);
       });
@@ -410,9 +701,6 @@
       return created;
    };
 
-   /**
-    * Trigger manual elemen tertentu
-    */
    viewMotion.trigger = function (target) {
       toArray(target).forEach(el => {
          if (el.__vmInstance)
@@ -420,47 +708,32 @@
       });
    };
 
-   /**
-    * Reset manual
-    */
    viewMotion.reset = function (target) {
       toArray(target).forEach(el => {
          if (el.__vmInstance) el.__vmInstance._reset(el);
       });
    };
 
-   /**
-    * Tambah preset kustom
-    */
-   viewMotion.register = function (name, keyframesFn) {
-      PRESETS[name] = keyframesFn;
+   viewMotion.register = function (name, fn) {
+      PRESETS[name] = fn;
       return viewMotion;
    };
 
-   /**
-    * List preset yang tersedia
-    */
    viewMotion.presets = function () {
       return Object.keys(PRESETS);
    };
 
-   /**
-    * Destroy semua instance
-    */
    viewMotion.destroyAll = function () {
       instances.forEach(i => i.destroy());
       instances.length = 0;
    };
 
-   // expose
    global.viewMotion = viewMotion;
 
-   // auto-init DOMContentLoaded kalau ada [data-vm]
+   // Auto init
    if (typeof document !== "undefined") {
       const autoInit = () => {
-         if (document.querySelector("[data-vm]")) {
-            viewMotion.init();
-         }
+         if (document.querySelector("[data-vm]")) viewMotion.init();
       };
       if (document.readyState === "loading") {
          document.addEventListener("DOMContentLoaded", autoInit, {
