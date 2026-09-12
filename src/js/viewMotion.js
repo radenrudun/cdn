@@ -2,7 +2,7 @@
  * viewMotion.js
  * Lightweight on-scroll animation library
  * Author: Raden
- * Version: 3.2.0
+ * Version: 3.5.0
  *
  * Usage:
  *   // Trigger mode (default) — animasi saat masuk viewport
@@ -274,6 +274,77 @@
          }
       }
 
+      _getOverflowParent(el) {
+         let parent = el.parentElement;
+
+         while (
+            parent &&
+            parent !== document.body &&
+            parent !== document.documentElement
+         ) {
+            const style = getComputedStyle(parent);
+
+            // Hindari parent yang sudah punya overflow sendiri
+            if (
+               style.overflowX === "visible" &&
+               style.overflowY === "visible"
+            ) {
+               return parent;
+            }
+
+            parent = parent.parentElement;
+         }
+
+         return null;
+      }
+
+      _needsOverflowGuard(opt) {
+         const animation = String(opt.animation || "").toLowerCase();
+
+         return [
+            "fade-left",
+            "fade-right",
+            "zoom",
+            "zoom-in",
+            "zoom-out",
+            "rotate",
+            "bounce",
+            "pop",
+            "drop",
+            "flip",
+            "flip-y",
+            "glitch"
+         ].includes(animation);
+      }
+
+      _applyOverflowGuard(el, opt) {
+         if (!this._needsOverflowGuard(opt)) return;
+
+         const parent = this._getOverflowParent(el);
+         if (!parent) return;
+
+         if (!parent.__vmOverflowState) {
+            parent.__vmOverflowState = {
+               overflowX: parent.style.overflowX,
+               overflowY: parent.style.overflowY
+            };
+         }
+
+         parent.style.overflowX = "clip";
+         el.__vmOverflowParent = parent;
+      }
+
+      _removeOverflowGuard(el) {
+         const parent = el.__vmOverflowParent;
+         if (!parent || !parent.__vmOverflowState) return;
+
+         parent.style.overflowX = parent.__vmOverflowState.overflowX;
+         parent.style.overflowY = parent.__vmOverflowState.overflowY;
+
+         delete parent.__vmOverflowState;
+         delete el.__vmOverflowParent;
+      }
+
       // ============ TRIGGER MODE ============
       _buildObserver() {
          const opt = this.options;
@@ -321,7 +392,9 @@
                         this.observer.unobserve(el);
                      }
                   } else {
-                     if (!elOpt.once) this._reset(el);
+                     if (!elOpt.once) {
+                        this._reset(el);
+                     }
 
                      if (typeof elOpt.onExit === "function") {
                         elOpt.onExit(el);
@@ -533,6 +606,7 @@
             }
 
             el.style.visibility = "visible";
+            this._applyOverflowGuard(el, opt);
 
             let anim;
 
@@ -581,6 +655,8 @@
                   opt.repeat -= 1;
                   anim.play();
                } else {
+                  this._removeOverflowGuard(el);
+
                   el.style.opacity = "";
                   el.style.transform = "";
                   el.style.filter = "";
@@ -603,6 +679,8 @@
                el.__vmAnimation.cancel();
             } catch (error) {}
          }
+
+         this._removeOverflowGuard(el);
 
          const opt = el.__vmOptions || this.options;
 
