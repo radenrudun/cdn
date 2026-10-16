@@ -2,7 +2,7 @@
  * viewMotion.js
  * Lightweight on-scroll animation library
  * Author: Raden
- * Version: 3.2.0
+ * Version: 3.3.0
  *
  * Usage:
  *   // Trigger mode (default) — animasi saat masuk viewport
@@ -36,102 +36,102 @@
       fade: () => [{ opacity: 0 }, { opacity: 1 }],
       "fade-up": () => [
          { opacity: 0, transform: "translateY(40px)" },
-         { opacity: 1, transform: "translateY(0)" }
+         { opacity: 1, transform: "translateY(0)" },
       ],
       "fade-down": () => [
          { opacity: 0, transform: "translateY(-40px)" },
-         { opacity: 1, transform: "translateY(0)" }
+         { opacity: 1, transform: "translateY(0)" },
       ],
       "fade-left": () => [
          { opacity: 0, transform: "translateX(40px)" },
-         { opacity: 1, transform: "translateX(0)" }
+         { opacity: 1, transform: "translateX(0)" },
       ],
       "fade-right": () => [
          { opacity: 0, transform: "translateX(-40px)" },
-         { opacity: 1, transform: "translateX(0)" }
+         { opacity: 1, transform: "translateX(0)" },
       ],
       zoom: () => [
          { opacity: 0.5, transform: "scale(0.5)" },
          { opacity: 1, transform: "scale(1.1)", offset: 0.7 },
-         { opacity: 1, transform: "scale(1)" }
+         { opacity: 1, transform: "scale(1)" },
       ],
       "zoom-in": () => [
          { opacity: 0, transform: "scale(0.6)" },
-         { opacity: 1, transform: "scale(1)" }
+         { opacity: 1, transform: "scale(1)" },
       ],
       "zoom-out": () => [
          { opacity: 0, transform: "scale(1.4)" },
-         { opacity: 1, transform: "scale(1)" }
+         { opacity: 1, transform: "scale(1)" },
       ],
       rotate: () => [
          { opacity: 0, transform: "rotate(-15deg) scale(0.8)" },
-         { opacity: 1, transform: "rotate(0) scale(1)" }
+         { opacity: 1, transform: "rotate(0) scale(1)" },
       ],
       bounce: () => [
          { opacity: 0, transform: "scale(0.3)" },
          { opacity: 1, transform: "scale(1.2)", offset: 0.6 },
          { opacity: 1, transform: "scale(0.9)", offset: 0.8 },
-         { opacity: 1, transform: "scale(1)" }
+         { opacity: 1, transform: "scale(1)" },
       ],
       blur: () => [
          { opacity: 0, filter: "blur(10px)" },
-         { opacity: 1, filter: "blur(0)" }
+         { opacity: 1, filter: "blur(0)" },
       ],
       pop: () => [
          { opacity: 0, transform: "scale(0) rotate(-10deg)" },
          { opacity: 0.8, transform: "scale(1.15) rotate(2deg)", offset: 0.5 },
-         { opacity: 1, transform: "scale(1) rotate(0)" }
+         { opacity: 1, transform: "scale(1) rotate(0)" },
       ],
       glitch: () => [
          {
             opacity: 0,
             transform: "translateX(-4px) skewX(-5deg)",
-            filter: "blur(2px)"
+            filter: "blur(2px)",
          },
          {
             opacity: 0.5,
             transform: "translateX(4px) skewX(5deg)",
-            offset: 0.3
+            offset: 0.3,
          },
          {
             opacity: 1,
             transform: "translateX(0) skewX(0)",
             filter: "blur(0)",
-            offset: 0.7
+            offset: 0.7,
          },
-         { opacity: 1, transform: "translateX(0) skewX(0)" }
+         { opacity: 1, transform: "translateX(0) skewX(0)" },
       ],
       drop: () => [
          { opacity: 0, transform: "translateY(-40px) scale(0.9)" },
          {
             opacity: 0.6,
             transform: "translateY(5px) scale(1.05)",
-            offset: 0.7
+            offset: 0.7,
          },
-         { opacity: 1, transform: "translateY(0) scale(1)" }
+         { opacity: 1, transform: "translateY(0) scale(1)" },
       ],
       flip: () => [
          { opacity: 0, transform: "perspective(600px) rotateX(-90deg)" },
-         { opacity: 1, transform: "perspective(600px) rotateX(0)" }
+         { opacity: 1, transform: "perspective(600px) rotateX(0)" },
       ],
       "flip-y": () => [
          { opacity: 0, transform: "perspective(600px) rotateY(-90deg)" },
-         { opacity: 1, transform: "perspective(600px) rotateY(0)" }
+         { opacity: 1, transform: "perspective(600px) rotateY(0)" },
       ],
       swing: () => [
          { opacity: 0, transform: "rotateZ(-10deg)" },
          { opacity: 1, transform: "rotateZ(5deg)", offset: 0.5 },
          { opacity: 1, transform: "rotateZ(-3deg)", offset: 0.75 },
-         { opacity: 1, transform: "rotateZ(0)" }
+         { opacity: 1, transform: "rotateZ(0)" },
       ],
       shake: () => [
          { opacity: 0, transform: "translateX(0)" },
          { opacity: 1, transform: "translateX(-8px)", offset: 0.3 },
          { opacity: 1, transform: "translateX(8px)", offset: 0.5 },
          { opacity: 1, transform: "translateX(-4px)", offset: 0.7 },
-         { opacity: 1, transform: "translateX(0)" }
+         { opacity: 1, transform: "translateX(0)" },
       ],
-      none: () => [{ opacity: 1 }, { opacity: 1 }]
+      none: () => [{ opacity: 1 }, { opacity: 1 }],
    };
 
    // ============================================================
@@ -150,6 +150,8 @@
       once: true,
       stagger: 0,
       reverse: false,
+      exit: "reverse", // "reverse" | "none" — animasi saat keluar viewport (hanya once:false)
+      exitSpeed: 1, // kecepatan animasi keluar (2 = dua kali lebih cepat)
 
       // Scroll mode
       mode: "trigger", // "trigger" | "scrub"
@@ -170,15 +172,15 @@
       onFinish: null, // (el, anim)
       onEnter: null, // (el, anim)
       onExit: null, // (el)
-      onProgress: null // (el, progress, direction) — scrub only
+      onProgress: null, // (el, progress, direction) — scrub only
    };
 
    // ============================================================
    // UTIL
    // ============================================================
-   const isElement = el => el instanceof Element;
+   const isElement = (el) => el instanceof Element;
 
-   const toArray = target => {
+   const toArray = (target) => {
       if (!target) return [];
       if (isElement(target)) return [target];
       if (typeof target === "string") {
@@ -190,7 +192,7 @@
       return [];
    };
 
-   const parseBool = v => v === "" || v === "true" || v === "1";
+   const parseBool = (v) => v === "" || v === "true" || v === "1";
 
    const parseNumber = (v, fallback) => {
       const n = parseFloat(v);
@@ -206,7 +208,7 @@
       const parts = s.split(/\s+/);
       return {
          el: parts[0] || "top",
-         vp: parts[1] || "bottom"
+         vp: parts[1] || "bottom",
       };
    }
 
@@ -264,7 +266,7 @@
          if (this.options.mode === "scrub") {
             this._initScrub();
          } else {
-            this.elements.forEach(el => {
+            this.elements.forEach((el) => {
                const opt = el.__vmOptions || this.options;
                this._applyInitialStyle(el, opt);
             });
@@ -279,7 +281,7 @@
          const opt = this.options;
 
          if (typeof IntersectionObserver === "undefined") {
-            this.elements.forEach(el => {
+            this.elements.forEach((el) => {
                const opt = el.__vmOptions || this.options;
 
                el.style.opacity = "";
@@ -295,8 +297,8 @@
          }
 
          this.observer = new IntersectionObserver(
-            entries => {
-               entries.forEach(entry => {
+            (entries) => {
+               entries.forEach((entry) => {
                   const el = entry.target;
                   const elOpt = el.__vmOptions || opt;
 
@@ -312,7 +314,7 @@
                         el,
                         (elOpt.delay || 0) + delayExtra,
                         false,
-                        elOpt
+                        elOpt,
                      );
 
                      this.triggered.add(el);
@@ -321,7 +323,7 @@
                         this.observer.unobserve(el);
                      }
                   } else {
-                     if (!elOpt.once) this._reset(el);
+                     if (!elOpt.once) this._exit(el, elOpt);
 
                      if (typeof elOpt.onExit === "function") {
                         elOpt.onExit(el);
@@ -331,19 +333,19 @@
             },
             {
                threshold: opt.threshold,
-               rootMargin: opt.rootMargin
-            }
+               rootMargin: opt.rootMargin,
+            },
          );
       }
 
       _observeAll() {
          if (!this.observer) return;
-         this.elements.forEach(el => this.observer.observe(el));
+         this.elements.forEach((el) => this.observer.observe(el));
       }
 
       // ============ SCRUB MODE ============
       _initScrub() {
-         this.elements.forEach(el => {
+         this.elements.forEach((el) => {
             const elOpt = el.__vmOptions || this.options;
             const preset = PRESETS[elOpt.animation] || PRESETS["fade-up"];
             const keyframes = preset(elOpt);
@@ -353,7 +355,7 @@
             const anim = el.animate(keyframes, {
                duration: elOpt.duration,
                easing: elOpt.easing,
-               fill: "both"
+               fill: "both",
             });
             anim.pause();
             anim.currentTime = 0;
@@ -373,10 +375,10 @@
          };
 
          window.addEventListener("scroll", this._onScrollBound, {
-            passive: true
+            passive: true,
          });
          window.addEventListener("resize", this._resizeBound, {
-            passive: true
+            passive: true,
          });
 
          this._scheduleScrub();
@@ -419,7 +421,7 @@
 
          let needsMore = false;
 
-         this.elements.forEach(el => {
+         this.elements.forEach((el) => {
             const entry = this.scrubMap.get(el);
             if (!entry) return;
             const { anim, opt } = entry;
@@ -436,14 +438,14 @@
                elBottom,
                startPos.el,
                startPos.vp,
-               vpHeight
+               vpHeight,
             );
             const endY = calcScrollY(
                elTop,
                elBottom,
                endPos.el,
                endPos.vp,
-               vpHeight
+               vpHeight,
             );
 
             const range = endY - startY;
@@ -492,14 +494,14 @@
             elBottom,
             startPos.el,
             startPos.vp,
-            vpHeight
+            vpHeight,
          );
          const endY = calcScrollY(
             elTop,
             elBottom,
             endPos.el,
             endPos.vp,
-            vpHeight
+            vpHeight,
          );
          const range = Math.max(0, endY - startY);
          const h = el.offsetHeight;
@@ -524,7 +526,28 @@
          const keyframes = preset(opt);
 
          const run = () => {
+            el.__vmTimer = null;
             const previousAnimation = el.__vmAnimation;
+
+            // Masuk lagi saat animasi keluar masih berjalan:
+            // lanjutkan dari posisi sekarang supaya tidak lompat ke awal
+            if (
+               previousAnimation &&
+               el.__vmExiting &&
+               previousAnimation.playState !== "idle"
+            ) {
+               el.__vmExiting = false;
+               previousAnimation.playbackRate = opt.speed || 1;
+               previousAnimation.play();
+               this.started.add(el);
+               this._bindFinish(el, previousAnimation, opt);
+
+               if (typeof opt.onEnter === "function") {
+                  opt.onEnter(el, previousAnimation);
+               }
+
+               return;
+            }
 
             if (previousAnimation) {
                try {
@@ -532,6 +555,7 @@
                } catch (error) {}
             }
 
+            el.__vmExiting = false;
             el.style.visibility = "visible";
 
             let anim;
@@ -541,7 +565,7 @@
                   duration: Math.max(0, Number(opt.duration) || 0),
                   delay: 0,
                   easing: opt.easing,
-                  fill: "both"
+                  fill: "both",
                });
             } catch (error) {
                console.warn("[ViewMotion] Animasi gagal:", error);
@@ -570,38 +594,83 @@
                opt.onEnter(el, anim);
             }
 
-            anim.onfinish = () => {
-               if (typeof opt.onFinish === "function") {
-                  opt.onFinish(el, anim);
-               }
-
-               if (opt.repeat === true) {
-                  anim.play();
-               } else if (typeof opt.repeat === "number" && opt.repeat > 0) {
-                  opt.repeat -= 1;
-                  anim.play();
-               } else {
-                  el.style.opacity = "";
-                  el.style.transform = "";
-                  el.style.filter = "";
-                  el.style.visibility = "";
-                  el.style.willChange = "auto";
-               }
-            };
+            this._bindFinish(el, anim, opt);
          };
+
+         this._clearTimer(el);
 
          if (immediate || delay <= 0) {
             run();
          } else {
-            setTimeout(run, delay);
+            el.__vmTimer = setTimeout(run, delay);
          }
       }
 
+      // Handler saat animasi masuk selesai
+      _bindFinish(el, anim, opt) {
+         anim.onfinish = () => {
+            if (typeof opt.onFinish === "function") {
+               opt.onFinish(el, anim);
+            }
+
+            if (opt.repeat === true) {
+               anim.play();
+            } else if (typeof opt.repeat === "number" && opt.repeat > 0) {
+               opt.repeat -= 1;
+               anim.play();
+            } else {
+               el.style.opacity = "";
+               el.style.transform = "";
+               el.style.filter = "";
+               el.style.visibility = "";
+               el.style.willChange = "auto";
+            }
+         };
+      }
+
+      // Batalkan animasi masuk yang masih menunggu delay / stagger
+      _clearTimer(el) {
+         if (el.__vmTimer) {
+            clearTimeout(el.__vmTimer);
+            el.__vmTimer = null;
+         }
+      }
+
+      // Animasi keluar: putar mundur dari posisi sekarang, lalu reset
+      _exit(el, opt) {
+         this._clearTimer(el);
+
+         if (el.__vmExiting) return;
+
+         const anim = el.__vmAnimation;
+
+         if (opt.exit === "none" || !anim || anim.playState === "idle") {
+            this._reset(el);
+            return;
+         }
+
+         el.__vmExiting = true;
+         this.started.delete(el);
+
+         anim.onfinish = null;
+         anim.playbackRate = -Math.abs((opt.speed || 1) * (opt.exitSpeed || 1));
+         anim.play();
+
+         anim.onfinish = () => {
+            this._reset(el);
+         };
+      }
+
       _reset(el) {
+         this._clearTimer(el);
+         el.__vmExiting = false;
+
          if (el.__vmAnimation) {
             try {
                el.__vmAnimation.cancel();
             } catch (error) {}
+
+            el.__vmAnimation = null;
          }
 
          const opt = el.__vmOptions || this.options;
@@ -621,13 +690,13 @@
       }
 
       reset() {
-         this.elements.forEach(el => this._reset(el));
+         this.elements.forEach((el) => this._reset(el));
          return this;
       }
 
       add(target) {
          const els = toArray(target);
-         els.forEach(el => {
+         els.forEach((el) => {
             this.elements.push(el);
             if (this.observer) this.observer.observe(el);
             if (this.options.mode === "scrub") {
@@ -637,7 +706,7 @@
                const anim = el.animate(kf, {
                   duration: elOpt.duration,
                   easing: elOpt.easing,
-                  fill: "both"
+                  fill: "both",
                });
                anim.pause();
                anim.currentTime = 0;
@@ -651,7 +720,7 @@
 
       destroy() {
          if (this.observer) {
-            this.elements.forEach(el => this.observer.unobserve(el));
+            this.elements.forEach((el) => this.observer.unobserve(el));
             this.observer.disconnect();
             this.observer = null;
          }
@@ -675,7 +744,7 @@
          if (this.options.mode === "scrub") {
             this._initScrub();
          } else {
-            this.elements.forEach(el => {
+            this.elements.forEach((el) => {
                const opt = el.__vmOptions || this.options;
                this._applyInitialStyle(el, opt);
             });
@@ -706,22 +775,22 @@
       const nodes = root.querySelectorAll(`[${attr}]`);
       const created = [];
 
-      nodes.forEach(el => {
+      nodes.forEach((el) => {
          const animation = el.getAttribute(attr) || "fade-up";
          const opts = {
             animation,
             duration: parseNumber(
                el.getAttribute(`${attr}-duration`),
-               DEFAULTS.duration
+               DEFAULTS.duration,
             ),
             delay: parseNumber(
                el.getAttribute(`${attr}-delay`),
-               DEFAULTS.delay
+               DEFAULTS.delay,
             ),
             easing: el.getAttribute(`${attr}-easing`) || DEFAULTS.easing,
             threshold: parseNumber(
                el.getAttribute(`${attr}-threshold`),
-               DEFAULTS.threshold
+               DEFAULTS.threshold,
             ),
             rootMargin:
                el.getAttribute(`${attr}-root-margin`) || DEFAULTS.rootMargin,
@@ -733,7 +802,12 @@
                : DEFAULTS.reverse,
             stagger: parseNumber(
                el.getAttribute(`${attr}-stagger`),
-               DEFAULTS.stagger
+               DEFAULTS.stagger,
+            ),
+            exit: el.getAttribute(`${attr}-exit`) || DEFAULTS.exit,
+            exitSpeed: parseNumber(
+               el.getAttribute(`${attr}-exit-speed`),
+               DEFAULTS.exitSpeed,
             ),
 
             // Scroll mode
@@ -742,7 +816,7 @@
             end: el.getAttribute(`${attr}-end`) || DEFAULTS.end,
             smooth: parseNumber(
                el.getAttribute(`${attr}-smooth`),
-               DEFAULTS.smooth
+               DEFAULTS.smooth,
             ),
             pin: el.hasAttribute(`${attr}-pin`)
                ? parseBool(el.getAttribute(`${attr}-pin`))
@@ -760,7 +834,10 @@
                const n = parseInt(v, 10);
                return isNaN(n) ? false : n;
             })(),
-            speed: parseNumber(el.getAttribute(`${attr}-speed`), DEFAULTS.speed)
+            speed: parseNumber(
+               el.getAttribute(`${attr}-speed`),
+               DEFAULTS.speed,
+            ),
          };
          el.__vmOptions = opts;
 
@@ -773,14 +850,14 @@
    };
 
    viewMotion.trigger = function (target) {
-      toArray(target).forEach(el => {
+      toArray(target).forEach((el) => {
          if (el.__vmInstance)
             el.__vmInstance._play(el, 0, true, el.__vmOptions);
       });
    };
 
    viewMotion.reset = function (target) {
-      toArray(target).forEach(el => {
+      toArray(target).forEach((el) => {
          if (el.__vmInstance) el.__vmInstance._reset(el);
       });
    };
@@ -795,7 +872,7 @@
    };
 
    viewMotion.destroyAll = function () {
-      instances.forEach(i => i.destroy());
+      instances.forEach((i) => i.destroy());
       instances.length = 0;
    };
 
@@ -808,7 +885,7 @@
       };
       if (document.readyState === "loading") {
          document.addEventListener("DOMContentLoaded", autoInit, {
-            once: true
+            once: true,
          });
       } else {
          autoInit();
