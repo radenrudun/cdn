@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="id">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Brat Sticker</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+         href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap"
+         rel="stylesheet"
+      />
+      <style>
+         @font-face {
+            font-family: arialnarrow;
+            src: url("./arialnarrow.ttf");
+         }
+
+         * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+         }
+
+         html,
+         body {
+            width: 512px;
+            height: 512px;
+            background: #000000;
+            overflow: hidden;
+         }
+
+         #brat {
+            width: 512px;
+            height: 512px;
+            padding: 28px;
+            background: #ffffff;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+         }
+
+         #text {
+            font-family: arialnarrow, "Roboto Condensed", Arial, sans-serif;
+            font-weight: 400;
+            color: #000;
+            text-align: justify;
+            text-align-last: justify;
+            line-height: 1.12;
+            letter-spacing: -0.02em;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
+            width: 100%;
+         }
+      </style>
+   </head>
+   <body>
+      <div id="brat">
+         <div id="text">bacot lu ngentot</div>
+      </div>
+
+      <script>
+         const box = document.getElementById("brat");
+         const el = document.getElementById("text");
+         const maxW = 512 - 56;
+         const maxH = 512 - 56;
+
+         function fit() {
+            let lo = 14,
+               hi = 200;
+            while (lo < hi) {
+               const mid = Math.ceil((lo + hi) / 2);
+               el.style.fontSize = mid + "px";
+               if (el.scrollHeight <= maxH && el.scrollWidth <= maxW) lo = mid;
+               else hi = mid - 1;
+            }
+            el.style.fontSize = lo + "px";
+         }
+
+         function setText(t) {
+            el.textContent = t;
+            fit();
+         }
+         window.setText = setText;
+
+         const params = new URLSearchParams(location.search);
+         const q = params.get("text");
+         if (q) el.textContent = q;
+
+         document.fonts.ready.then(fit);
+      </script>
+   </body>
+</html>
