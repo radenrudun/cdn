@@ -1,4 +1,8 @@
-@font-face {
-            font-family: "Arial Narrow";
-            src: url("https://cdn.nop.my.id/src/fonts/arialnarrow.ttf") ;
-         }
+@font-face{
+    font-family: "Arial Narrow";
+    src: url("https://cdn.nop.my.id/src/fonts/arialnarrow.woff2")format("woff2")
+    font-weight:normal;
+    font-style:normal;
+    font-display:swap;
+}
+ 
